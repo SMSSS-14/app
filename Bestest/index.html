@@ -12,189 +12,320 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{font-family:'Plus Jakarta Sans',sans-serif;box-sizing:border-box;margin:0;padding:0;}
-:root{--bg:#07090f;--surface:rgba(14,20,40,.85);--surface2:rgba(20,28,55,.9);--sidebar:#0c1228;
-  --amber:#f59e0b;--amber2:#fbbf24;--indigo:#6366f1;--border:rgba(255,255,255,.08);
-  --border2:rgba(255,255,255,.14);--text1:#f8fafc;--text2:#94a3b8;--text3:#64748b;
-  --success:#22c55e;--danger:#ef4444;--warning:#f97316;--info:#3b82f6;}
-html,body{background:var(--bg);color:var(--text1);min-height:100vh;overflow-x:hidden;}
-.page{display:none;min-height:100vh;}
-.page.active{display:flex;flex-direction:column;}
+
+/* ════════════════════════════════════════
+   COLOUR SYSTEM
+   Blue dominant · Orange/Yellow accents · Mild Red alerts
+════════════════════════════════════════ */
+:root{
+  --bg:#08112A;
+  --surface:rgba(10,25,65,.78);
+  --surface2:rgba(13,30,78,.88);
+  --sidebar:#070F24;
+  /* Blues */
+  --b1:#1E3A8A; --b2:#2563EB; --b3:#3B82F6; --b4:#60A5FA; --b5:#93C5FD;
+  /* Warm accents */
+  --yellow:#F59E0B; --yellow2:#FBBF24;
+  --orange:#F97316; --orange2:#FB923C;
+  /* Mild red */
+  --red:#EF4444; --red2:#F87171;
+  /* Status */
+  --success:#22c55e;
+  /* Text */
+  --text1:#EFF6FF; --text2:#93C5FD; --text3:#4A7FC1;
+  /* Borders */
+  --border:rgba(59,130,246,.16); --border2:rgba(96,165,250,.28);
+}
+
+/* ── ANIMATED GRADIENT BACKGROUND ── */
+html,body{min-height:100vh;overflow-x:hidden;color:var(--text1);}
+body{position:relative;}
+body::before{
+  content:'';position:fixed;inset:0;z-index:-2;
+  background:linear-gradient(-45deg,
+    #060D20,#0A1E55,#102568,#0D1A45,
+    #06101E,#0E2260,#1A3A8A,#06101E);
+  background-size:400% 400%;
+  animation:bgFlow 20s ease infinite;
+}
+@keyframes bgFlow{
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+/* ── FLOATING BLOBS ── */
+.blobs{position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden;}
+.blob{position:absolute;border-radius:50%;filter:blur(85px);}
+.blob1{width:700px;height:700px;
+  background:radial-gradient(circle,rgba(37,99,235,.32),transparent);
+  top:-180px;left:-150px;
+  animation:float1 14s ease-in-out infinite;}
+.blob2{width:550px;height:550px;
+  background:radial-gradient(circle,rgba(249,115,22,.22),transparent);
+  bottom:-120px;right:-100px;
+  animation:float2 18s ease-in-out infinite;}
+.blob3{width:380px;height:380px;
+  background:radial-gradient(circle,rgba(245,158,11,.18),transparent);
+  top:35%;left:55%;
+  animation:float3 11s ease-in-out infinite;}
+.blob4{width:280px;height:280px;
+  background:radial-gradient(circle,rgba(96,165,250,.2),transparent);
+  top:15%;right:10%;
+  animation:float4 16s ease-in-out infinite;}
+@keyframes float1{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(50px,-35px) scale(1.09)}75%{transform:translate(-30px,45px) scale(.94)}}
+@keyframes float2{0%,100%{transform:translate(0,0) scale(1)}35%{transform:translate(-45px,-30px) scale(1.12)}70%{transform:translate(35px,25px) scale(.92)}}
+@keyframes float3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(25px,-45px) scale(1.06)}}
+@keyframes float4{0%,100%{transform:translate(0,0)}33%{transform:translate(-25px,35px)}66%{transform:translate(35px,-22px)}}
+
+/* ── PAGE SYSTEM ── */
+.page{display:none;min-height:100vh;}.page.active{display:flex;flex-direction:column;}
 .dash-page.active{display:flex;flex-direction:row;}
-.blobs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
-.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.1;}
-.blob1{width:600px;height:600px;background:radial-gradient(circle,#f59e0b,transparent);top:-150px;left:-150px;}
-.blob2{width:500px;height:500px;background:radial-gradient(circle,#6366f1,transparent);bottom:-100px;right:-100px;}
-.blob3{width:350px;height:350px;background:radial-gradient(circle,#3b82f6,transparent);top:40%;left:45%;}
-.card{background:var(--surface);backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.45);}
-.card2{background:var(--surface2);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,.35);}
-.inp{background:rgba(255,255,255,.05);border:1.5px solid var(--border2);border-radius:12px;color:var(--text1);outline:none;transition:all .25s;width:100%;padding:11px 14px;font-size:14px;font-weight:500;}
-.inp:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,158,11,.18);}
-.inp::placeholder{color:var(--text3);} .inp option{background:#0f172a;color:var(--text1);}
-.btn-amber{background:linear-gradient(135deg,#f59e0b,#f97316);color:#000;border:none;border-radius:12px;padding:11px 24px;font-weight:700;font-size:14px;cursor:pointer;transition:all .25s;box-shadow:0 4px 20px rgba(245,158,11,.4);}
-.btn-amber:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(245,158,11,.55);}
-.btn-amber:disabled{opacity:.55;transform:none;cursor:not-allowed;}
-.btn-indigo{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;padding:11px 24px;font-weight:700;font-size:14px;cursor:pointer;transition:all .25s;}
-.btn-indigo:hover{transform:translateY(-2px);}
-.btn-danger{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:10px;padding:7px 14px;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;}
-.btn-ghost{background:rgba(255,255,255,.06);color:var(--text2);border:1px solid var(--border);border-radius:10px;padding:7px 14px;font-weight:500;font-size:13px;cursor:pointer;transition:all .2s;}
-.btn-ghost:hover{background:rgba(255,255,255,.1);}
-.btn-outline{background:transparent;color:var(--amber);border:1.5px solid rgba(245,158,11,.4);border-radius:10px;padding:7px 14px;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;}
-.btn-outline:hover{background:rgba(245,158,11,.1);}
+
+/* ── GLASS CARDS ── */
+.card{
+  background:rgba(10,24,65,.75);
+  backdrop-filter:blur(32px);-webkit-backdrop-filter:blur(32px);
+  border:1px solid var(--border2);border-radius:22px;
+  box-shadow:0 8px 40px rgba(0,0,0,.55),0 1px 0 rgba(96,165,250,.1) inset,0 -1px 0 rgba(249,115,22,.06) inset;}
+.card2{
+  background:rgba(13,30,80,.82);
+  backdrop-filter:blur(24px);
+  border:1px solid var(--border);border-radius:16px;
+  box-shadow:0 4px 24px rgba(0,0,0,.4);}
+
+/* ── INPUTS ── */
+.inp{background:rgba(255,255,255,.05);border:1.5px solid var(--border2);border-radius:12px;
+  color:var(--text1);outline:none;transition:all .25s;width:100%;padding:11px 14px;font-size:14px;font-weight:500;}
+.inp:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(249,115,22,.2);}
+.inp::placeholder{color:var(--text3);}.inp option{background:#0A1840;color:var(--text1);}
+.inp:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ── BUTTONS ── */
+/* Primary — Blue → Orange (sky to sun) */
+.btn-amber{background:linear-gradient(135deg,#1D4ED8,#2563EB 40%,#F97316);color:#fff;border:none;
+  border-radius:12px;padding:11px 24px;font-weight:700;font-size:14px;cursor:pointer;
+  transition:all .28s;box-shadow:0 4px 22px rgba(37,99,235,.4);}
+.btn-amber:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(249,115,22,.45);}
+.btn-amber:disabled{opacity:.5;transform:none;cursor:not-allowed;}
+/* Secondary — Pure blue */
+.btn-indigo{background:linear-gradient(135deg,#1E40AF,#2563EB);color:#fff;border:none;
+  border-radius:12px;padding:11px 24px;font-weight:700;font-size:14px;cursor:pointer;
+  transition:all .25s;box-shadow:0 4px 18px rgba(37,99,235,.4);}
+.btn-indigo:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(37,99,235,.55);}
+.btn-indigo:disabled{opacity:.5;transform:none;}
+.btn-danger{background:linear-gradient(135deg,#EF4444,#DC2626);color:#fff;border:none;
+  border-radius:10px;padding:7px 14px;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;}
+.btn-danger:hover{transform:translateY(-1px);}
+.btn-ghost{background:rgba(59,130,246,.08);color:var(--text2);border:1px solid var(--border);
+  border-radius:10px;padding:7px 14px;font-weight:500;font-size:13px;cursor:pointer;transition:all .2s;}
+.btn-ghost:hover{background:rgba(59,130,246,.16);color:var(--text1);}
+.btn-outline{background:transparent;color:var(--orange);border:1.5px solid rgba(249,115,22,.45);
+  border-radius:10px;padding:7px 14px;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;}
+.btn-outline:hover{background:rgba(249,115,22,.1);}
 .btn-sm{padding:5px 11px;font-size:12px;border-radius:8px;}
+
+/* ── BADGES ── */
 .badge{display:inline-flex;align-items:center;gap:4px;border-radius:99px;padding:3px 10px;font-size:11px;font-weight:700;white-space:nowrap;}
-.badge-amber{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.3);}
-.badge-indigo{background:rgba(99,102,241,.15);color:#818cf8;border:1px solid rgba(99,102,241,.3);}
-.badge-purple{background:rgba(168,85,247,.15);color:#c084fc;border:1px solid rgba(168,85,247,.3);}
+.badge-amber{background:rgba(245,158,11,.18);color:#FBBF24;border:1px solid rgba(245,158,11,.35);}
+.badge-indigo{background:rgba(37,99,235,.2);color:#93C5FD;border:1px solid rgba(59,130,246,.35);}
+.badge-purple{background:rgba(249,115,22,.15);color:var(--orange2);border:1px solid rgba(249,115,22,.3);}
 .badge-green{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.3);}
 .badge-red{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3);}
+.badge-blue{background:rgba(59,130,246,.18);color:#93C5FD;border:1px solid rgba(59,130,246,.35);}
+.badge-slate{background:rgba(96,130,180,.15);color:var(--text2);border:1px solid rgba(96,130,180,.25);}
+.badge-anon{background:rgba(8,17,42,.7);color:var(--text3);border:1px solid rgba(59,130,246,.2);}
 .badge-orange{background:rgba(249,115,22,.15);color:#fb923c;border:1px solid rgba(249,115,22,.3);}
-.badge-blue{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.3);}
-.badge-slate{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3);}
-.badge-anon{background:rgba(15,23,42,.7);color:#94a3b8;border:1px solid rgba(148,163,184,.25);}
-.st-pending{background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.3);}
-.st-review{background:rgba(59,130,246,.15);color:#60a5fa;border:1px solid rgba(59,130,246,.3);}
-.st-escalated{background:rgba(249,115,22,.15);color:#fb923c;border:1px solid rgba(249,115,22,.3);}
+
+/* ── STATUS BADGES ── */
+.st-pending{background:rgba(245,158,11,.18);color:#FBBF24;border:1px solid rgba(245,158,11,.35);}
+.st-review{background:rgba(59,130,246,.18);color:#93C5FD;border:1px solid rgba(59,130,246,.35);}
+.st-escalated{background:rgba(249,115,22,.18);color:var(--orange2);border:1px solid rgba(249,115,22,.35);}
 .st-resolved{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.3);}
-.st-closed{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3);}
+.st-closed{background:rgba(100,120,160,.15);color:var(--text3);border:1px solid rgba(100,120,160,.25);}
+
+/* ── TOAST ── */
 #toast-wrap{position:fixed;top:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:10px;max-width:360px;}
-.toast{display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:14px;font-size:13.5px;font-weight:600;backdrop-filter:blur(20px);animation:tIn .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 8px 32px rgba(0,0,0,.5);}
-.t-success{background:rgba(34,197,94,.18);border:1.5px solid rgba(34,197,94,.35);color:#86efac;}
-.t-error{background:rgba(239,68,68,.18);border:1.5px solid rgba(239,68,68,.35);color:#fca5a5;}
-.t-info{background:rgba(99,102,241,.18);border:1.5px solid rgba(99,102,241,.35);color:#a5b4fc;}
-.t-warning{background:rgba(245,158,11,.18);border:1.5px solid rgba(245,158,11,.35);color:#fde68a;}
+.toast{display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:14px;font-size:13.5px;font-weight:600;backdrop-filter:blur(24px);animation:tIn .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 8px 32px rgba(0,0,0,.5);}
+.t-success{background:rgba(34,197,94,.2);border:1.5px solid rgba(34,197,94,.4);color:#86efac;}
+.t-error{background:rgba(239,68,68,.2);border:1.5px solid rgba(239,68,68,.4);color:#fca5a5;}
+.t-info{background:rgba(37,99,235,.2);border:1.5px solid rgba(59,130,246,.4);color:#93C5FD;}
+.t-warning{background:rgba(245,158,11,.2);border:1.5px solid rgba(245,158,11,.4);color:#FBBF24;}
 @keyframes tIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
 @keyframes tOut{from{transform:translateX(0);opacity:1}to{transform:translateX(110%);opacity:0}}
 .toast-out{animation:tOut .3s ease forwards;}
-.spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:rotate .75s linear infinite;display:inline-block;flex-shrink:0;}
+
+/* ── SPINNER ── */
+.spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.2);border-top-color:#60A5FA;border-radius:50%;animation:rotate .75s linear infinite;display:inline-block;flex-shrink:0;}
 @keyframes rotate{to{transform:rotate(360deg)}}
 .hidden{display:none!important;}
-.sidebar{width:260px;min-height:100vh;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:50;}
-.sb-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
-.sb-logo img{width:44px;height:44px;border-radius:10px;object-fit:contain;background:#fff;padding:4px;}
-.sb-logo-text .school-name{font-size:13px;font-weight:800;color:var(--text1);line-height:1.2;}
-.sb-logo-text .school-tag{font-size:10px;color:var(--amber);font-weight:600;letter-spacing:.5px;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:265px;min-height:100vh;background:rgba(6,12,36,.92);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;
+  transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:50;
+  backdrop-filter:blur(20px);}
+.sb-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+  background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(249,115,22,.06));}
+.sb-logo img{width:46px;height:46px;border-radius:10px;object-fit:contain;background:#fff;padding:3px;
+  box-shadow:0 0 0 2px rgba(249,115,22,.35),0 4px 12px rgba(0,0,0,.4);}
+.sb-logo-text .school-name{font-size:13px;font-weight:800;color:var(--text1);line-height:1.25;}
+.sb-logo-text .school-tag{font-size:10px;color:var(--orange);font-weight:700;letter-spacing:.7px;margin-top:2px;}
 .sb-user{padding:14px 20px;border-bottom:1px solid var(--border);}
 .sb-user-name{font-size:14px;font-weight:700;color:var(--text1);}
 .sb-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;}
-.sb-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;color:var(--text2);font-size:13.5px;font-weight:600;cursor:pointer;transition:all .2s;border:none;background:transparent;width:100%;text-align:left;}
-.sb-item:hover{background:rgba(255,255,255,.06);color:var(--text1);}
-.sb-item.active{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.2);}
+.sb-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;
+  color:var(--text2);font-size:13.5px;font-weight:600;cursor:pointer;transition:all .2s;
+  border:none;background:transparent;width:100%;text-align:left;}
+.sb-item:hover{background:rgba(59,130,246,.12);color:var(--text1);}
+.sb-item.active{background:linear-gradient(135deg,rgba(37,99,235,.22),rgba(249,115,22,.14));
+  color:var(--orange2);border:1px solid rgba(249,115,22,.28);}
 .sb-item i{width:17px;height:17px;flex-shrink:0;}
 .sb-divider{height:1px;background:var(--border);margin:8px 10px;}
 .sb-logout{padding:14px 10px;}
+
+/* ── DASH LAYOUT ── */
 .dash-main{flex:1;min-height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
-.dash-content{padding:20px 24px;flex:1;}
-.dash-tab{display:none;}
-.dash-tab.active{display:block;}
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;margin-bottom:20px;}
-.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:8px;}
-.stat-card .stat-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;}
-.stat-card .stat-num{font-size:28px;font-weight:900;line-height:1;}
+.dash-content{padding:24px;flex:1;}
+.dash-tab{display:none;}.dash-tab.active{display:block;}
+
+/* ── STAT CARDS — gradient top strip ── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:16px;margin-bottom:24px;}
+.stat-card{background:rgba(13,30,80,.85);border:1px solid var(--border);border-radius:16px;
+  padding:18px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;
+  transition:transform .2s,box-shadow .2s;}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(37,99,235,.25);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--b2),var(--orange),var(--yellow));}
+.stat-card .stat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.stat-card .stat-num{font-size:28px;font-weight:900;line-height:1;color:var(--text1);}
 .stat-card .stat-label{font-size:12px;color:var(--text2);font-weight:600;}
-/* FILTERS */
-.filter-panel{background:rgba(14,20,40,.7);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;}
-.filters-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
-.filters-row:last-child{margin-bottom:0;}
-.filter-inp{background:rgba(255,255,255,.06);border:1.5px solid var(--border2);border-radius:10px;color:var(--text1);outline:none;padding:7px 11px;font-size:12.5px;font-family:inherit;transition:border-color .2s;}
-.filter-inp:focus{border-color:var(--amber);}
-.filter-inp option{background:#0f172a;}
-.active-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 8px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:99px;font-size:11px;font-weight:600;color:var(--amber);cursor:pointer;transition:all .2s;}
-.active-chip:hover{background:rgba(245,158,11,.2);}
-.result-count{font-size:12px;color:var(--text3);font-weight:600;padding:4px 0;}
-/* DATE GROUP */
-.date-group-hdr{display:flex;align-items:center;gap:10px;padding:10px 0 7px;margin-top:6px;}
-.date-group-hdr::before{content:'';width:3px;height:18px;background:linear-gradient(135deg,var(--amber),var(--indigo));border-radius:99px;}
-.date-group-hdr::after{content:'';flex:1;height:1px;background:var(--border);}
-.date-group-label{font-size:12px;font-weight:700;color:var(--text2);}
-.date-group-count{font-size:11px;color:var(--text3);}
-/* LOAD MORE */
-.load-more-wrap{text-align:center;padding:20px 0 8px;}
-/* SUBMISSION CARDS */
-.sub-card{background:var(--surface2);border:1px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden;transition:border-color .2s;}
-.sub-card:hover{border-color:rgba(245,158,11,.25);}
-.sub-card.is-anon{border-left:3px solid rgba(148,163,184,.3);}
-.sub-card-header{padding:14px 16px;cursor:pointer;user-select:none;}
-.sub-card-body{padding:0 16px 16px;display:none;}
-.sub-card-body.open{display:block;}
-.chevron{transition:transform .25s;display:inline-block;}
-.chevron.rotated{transform:rotate(180deg);}
-/* FORM CHIPS */
-.form-chips-grid{display:flex;flex-wrap:wrap;gap:8px;}
-.form-chip{display:inline-flex;align-items:center;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.09);color:var(--text2);transition:all .2s;user-select:none;}
-.form-chip:hover{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);color:var(--amber);}
-.form-chip.sel{background:rgba(245,158,11,.15);border-color:var(--amber);color:var(--amber);box-shadow:0 0 0 3px rgba(245,158,11,.12);}
-/* COORD CLASS CHIPS */
-.col-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.06);border:1.5px solid var(--border2);border-radius:10px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;color:var(--text2);}
-.col-chip:hover,.col-chip.sel{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.4);color:var(--amber);}
-/* COORD CLASS CHIPS in modal */
-.class-chip{display:inline-flex;align-items:center;padding:7px 13px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.09);color:var(--text2);transition:all .2s;user-select:none;}
-.class-chip:hover{background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.3);color:var(--indigo2,#818cf8);}
-.class-chip.sel{background:rgba(99,102,241,.15);border-color:var(--indigo);color:#818cf8;box-shadow:0 0 0 3px rgba(99,102,241,.12);}
-/* NOTES */
-.notes-ta{background:rgba(255,255,255,.04);border:1.5px solid var(--border);border-radius:10px;color:var(--text1);outline:none;width:100%;padding:9px 12px;font-size:13px;font-family:inherit;resize:vertical;min-height:70px;}
-.notes-ta:focus{border-color:var(--indigo);}
-/* ANON TOGGLE */
-.anon-wrap{display:flex;align-items:center;justify-content:space-between;background:rgba(99,102,241,.07);border:1.5px solid rgba(99,102,241,.2);border-radius:14px;padding:14px 16px;cursor:pointer;transition:all .25s;user-select:none;}
-.anon-wrap:hover{background:rgba(99,102,241,.12);}
-.anon-wrap.on{background:rgba(99,102,241,.18);border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.15);}
+
+/* ── SUBMISSION CARDS ── */
+.sub-card{background:rgba(13,30,80,.8);border:1px solid var(--border);border-radius:16px;
+  margin-bottom:12px;overflow:hidden;transition:all .2s;}
+.sub-card:hover{border-color:rgba(249,115,22,.35);box-shadow:0 4px 22px rgba(37,99,235,.2);}
+.sub-card.is-anon{border-left:3px solid rgba(96,165,250,.35);}
+.sub-card-header{padding:14px 18px;cursor:pointer;user-select:none;}
+.sub-card-body{padding:0 18px 16px;display:none;}.sub-card-body.open{display:block;}
+
+/* ── FILTERS ── */
+.filters-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center;}
+.filter-inp{background:rgba(37,99,235,.08);border:1.5px solid var(--border2);border-radius:10px;
+  color:var(--text1);outline:none;padding:8px 12px;font-size:13px;font-family:inherit;transition:all .2s;}
+.filter-inp:focus{border-color:var(--orange);}
+.filter-inp option{background:#0A1840;}
+.date-grp-hdr{display:flex;align-items:center;gap:10px;padding:10px 0 6px;margin-top:4px;}
+.date-grp-hdr::after{content:'';flex:1;height:1px;background:rgba(59,130,246,.2);}
+.active-fchip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;
+  background:rgba(249,115,22,.14);border:1px solid rgba(249,115,22,.35);border-radius:99px;
+  font-size:11px;font-weight:600;color:var(--orange2);cursor:pointer;}
+.active-fchip:hover{background:rgba(249,115,22,.22);}
+
+/* ── FORM ── */
+.flabel{display:block;color:rgba(239,246,255,.75);font-size:12.5px;font-weight:700;margin-bottom:6px;letter-spacing:.2px;}
+.frow{margin-bottom:14px;}
+
+/* ── ANONYMOUS TOGGLE ── */
+.anon-wrap{display:flex;align-items:center;justify-content:space-between;
+  background:rgba(37,99,235,.08);border:1.5px solid rgba(59,130,246,.25);border-radius:14px;
+  padding:14px 16px;cursor:pointer;transition:all .25s;user-select:none;}
+.anon-wrap:hover{background:rgba(37,99,235,.14);}
+.anon-wrap.on{background:rgba(249,115,22,.12);border-color:rgba(249,115,22,.4);box-shadow:0 0 0 3px rgba(249,115,22,.12);}
 .pill{width:42px;height:23px;background:rgba(255,255,255,.12);border-radius:99px;position:relative;transition:background .3s;flex-shrink:0;}
-.pill.on{background:linear-gradient(135deg,#6366f1,#8b5cf6);}
+.pill.on{background:linear-gradient(135deg,var(--b2),var(--orange));}
 .pill::after{content:'';position:absolute;top:3px;left:3px;width:17px;height:17px;background:#fff;border-radius:50%;transition:transform .3s cubic-bezier(.34,1.56,.64,1);box-shadow:0 1px 4px rgba(0,0,0,.4);}
 .pill.on::after{transform:translateX(19px);}
 .field-row{overflow:hidden;transition:all .35s ease;}
 .field-row.expanded{max-height:120px;opacity:1;}
 .field-row.collapsed{max-height:0;opacity:0;margin:0!important;}
-/* ROUTING PREVIEW */
-.routing-card{background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(99,102,241,.08));border:1.5px solid rgba(245,158,11,.25);border-radius:16px;padding:16px 18px;margin-top:16px;animation:fadeUp .35s ease;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-/* USER TABLE */
+
+/* ── ROUTING PREVIEW ── */
+.routing-card{background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(249,115,22,.08));
+  border:1.5px solid rgba(249,115,22,.3);border-radius:16px;padding:16px 18px;margin-top:16px;}
+.routing-card.hidden{display:none;}
+
+/* ── CHEVRON ── */
+.chevron{transition:transform .25s;display:inline-block;}
+.chevron.rotated{transform:rotate(180deg);}
+
+/* ── USER TABLE ── */
 .user-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;}
 .user-table th{padding:10px 14px;color:var(--text3);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.6px;text-align:left;border-bottom:1px solid var(--border);}
-.user-table td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle;}
+.user-table td{padding:12px 14px;border-bottom:1px solid rgba(59,130,246,.08);vertical-align:middle;}
 .user-table tr:last-child td{border-bottom:none;}
-.user-table tr:hover td{background:rgba(255,255,255,.03);}
-/* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
+.user-table tr:hover td{background:rgba(37,99,235,.07);}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);}
 .modal-overlay.open{display:flex;}
-.modal-box{background:#0f1628;border:1px solid var(--border2);border-radius:20px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.7);}
+.modal-box{background:rgba(10,22,60,.95);border:1px solid rgba(96,165,250,.25);border-radius:20px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.7),0 0 0 1px rgba(249,115,22,.06) inset;}
 .modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .modal-body{padding:20px 24px;}
 .modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
-/* HOME NAV */
-.home-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:rgba(7,9,15,.85);backdrop-filter:blur(20px);position:sticky;top:0;z-index:40;}
-.home-nav .logo-area{display:flex;align-items:center;gap:12px;}
-.home-nav .logo-area img{width:40px;height:40px;border-radius:9px;object-fit:contain;background:#fff;padding:3px;}
-/* LABEL */
-.flabel{display:block;color:rgba(255,255,255,.75);font-size:12.5px;font-weight:700;margin-bottom:6px;letter-spacing:.2px;}
-.frow{margin-bottom:14px;}
-/* COL CARD */
-.col-card{background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:14px;}
-/* EMPTY STATE */
-.empty-state{text-align:center;padding:60px 20px;color:var(--text3);}
-.empty-state i{width:48px;height:48px;margin:0 auto 16px;display:block;opacity:.3;}
-/* CHART */
-.chart-wrap{position:relative;height:220px;}
-/* MOB */
-.mob-topbar{display:none;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--sidebar);position:sticky;top:0;z-index:60;}
+
+/* ── COLLECTION CHIP ── */
+.col-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(37,99,235,.08);
+  border:1.5px solid var(--border2);border-radius:10px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;color:var(--text2);}
+.col-chip:hover,.col-chip.sel{background:rgba(249,115,22,.18);border-color:rgba(249,115,22,.45);color:var(--orange);}
+
+/* ── CLASS CHIPS (admin modal only) ── */
+.class-chip{display:inline-flex;align-items:center;padding:7px 13px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;background:rgba(37,99,235,.08);border:1.5px solid rgba(59,130,246,.2);color:var(--text2);transition:all .2s;user-select:none;margin-bottom:4px;}
+.class-chip:hover{background:rgba(249,115,22,.14);border-color:rgba(249,115,22,.4);color:var(--orange2);}
+.class-chip.sel{background:rgba(249,115,22,.2);border-color:var(--orange);color:var(--orange);box-shadow:0 0 0 3px rgba(249,115,22,.12);}
+
+/* ── NOTES ── */
+.notes-ta{background:rgba(37,99,235,.06);border:1.5px solid var(--border);border-radius:10px;color:var(--text1);outline:none;width:100%;padding:9px 12px;font-size:13px;font-family:inherit;resize:vertical;min-height:70px;}
+.notes-ta:focus{border-color:var(--orange);}
+
+/* ── HOME NAVBAR ── */
+.home-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;
+  border-bottom:1px solid var(--border);
+  background:rgba(6,12,36,.82);backdrop-filter:blur(28px);position:sticky;top:0;z-index:40;}
+
+/* ── MOBILE ── */
+.mob-topbar{display:none;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:rgba(6,12,36,.95);position:sticky;top:0;z-index:60;backdrop-filter:blur(20px);}
 .mob-ham{background:none;border:none;cursor:pointer;color:var(--text1);padding:4px;}
-.sb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:49;display:none;}
+.sb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:49;display:none;}
 .sb-overlay.show{display:block;}
+
+/* ── COLLECTION CARD ── */
+.col-card{background:rgba(13,30,80,.82);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:14px;}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3);}
+.empty-state i{width:48px;height:48px;margin:0 auto 16px;display:block;opacity:.4;}
+
+/* ── CHART ── */
+.chart-wrap{position:relative;height:220px;}
+
+/* ── ANIMATIONS ── */
 @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeIn .4s ease;}
-/* ANALYTICS DATE FILTER */
-.an-date-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:12px;border:1px solid var(--border);}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(249,115,22,.4);border-radius:99px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(249,115,22,.65);}
+
+/* ── HOME HERO GRADIENT BAND ── */
+.hero-band{
+  background:linear-gradient(135deg,rgba(30,64,175,.15),rgba(249,115,22,.08),rgba(245,158,11,.06));
+  border-bottom:1px solid var(--border);}
+
 @media(max-width:768px){
-  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);width:260px;}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);width:265px;}
   .sidebar.open{transform:translateX(0);}
   .mob-topbar{display:flex;}
-  .dash-content{padding:14px 14px;}
-  .stat-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
-  .filters-row{gap:6px;}
+  .dash-content{padding:16px;}
+  .stat-grid{grid-template-columns:repeat(2,1fr);}
 }
 </style>
 </head>
 <body>
-<div class="blobs"><div class="blob blob1"></div><div class="blob blob2"></div><div class="blob blob3"></div></div>
+<div class="blobs"><div class="blob blob1"></div><div class="blob blob2"></div><div class="blob blob3"></div><div class="blob blob4"></div></div>
 <div id="toast-wrap"></div>
 
 <!-- USER MODAL -->
@@ -207,16 +338,16 @@ html,body{background:var(--bg);color:var(--text1);min-height:100vh;overflow-x:hi
     <div class="modal-body">
       <div class="frow"><label class="flabel">Full Name *</label><input id="mu-name" class="inp" placeholder="e.g. Priya Sharma" type="text"/></div>
       <div class="frow"><label class="flabel">Email Address *</label><input id="mu-email" class="inp" placeholder="e.g. priya@school.com" type="email"/></div>
-      <div class="frow"><label class="flabel">Password *</label><input id="mu-password" class="inp" placeholder="Enter secure password" type="text"/></div>
+      <div class="frow"><label class="flabel">Password *</label><input id="mu-password" class="inp" placeholder="Enter password" type="text"/></div>
       <div class="frow"><label class="flabel">Role *</label>
         <select id="mu-role" class="inp" onchange="toggleClassRangeField()">
           <option value="coordinator">Coordinator</option><option value="principal">Principal</option>
         </select></div>
       <div class="frow" id="mu-classrange-wrap">
-        <label class="flabel" style="margin-bottom:10px;">ASSIGNED CLASSES — CLICK TO TOGGLE</label>
+        <label class="flabel" style="margin-bottom:10px;letter-spacing:.5px;">ASSIGNED CLASSES — CLICK TO TOGGLE</label>
         <div id="class-chips-container" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
         <input type="hidden" id="mu-classrange"/>
-        <p style="font-size:11px;color:var(--text3);margin-top:8px;">Select the classes this coordinator will handle. Submissions from these classes will be routed to them.</p>
+        <p style="font-size:11px;color:var(--text3);margin-top:8px;">Select classes this coordinator will handle. Submissions from selected classes route to them.</p>
       </div>
       <input id="mu-userid" type="hidden" value=""/>
     </div>
@@ -257,90 +388,86 @@ html,body{background:var(--bg);color:var(--text1);min-height:100vh;overflow-x:hi
   </div>
 </div>
 
-<!-- ═══════════ PAGE: HOME ═══════════ -->
+<!-- PAGE: HOME -->
 <section id="page-home" class="page active" style="flex-direction:column;">
   <nav class="home-nav">
-    <div class="logo-area">
-      <img src="logo.png" alt="St. Margaret" onerror="this.style.display='none'"/>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <img src="logo.png" alt="Logo" style="width:42px;height:42px;border-radius:10px;object-fit:contain;background:#fff;padding:3px;" onerror="this.style.display='none'"/>
       <div><div style="font-size:14px;font-weight:800;color:var(--text1);">St. Margaret Sr. Sec. School</div>
-           <div style="font-size:10px;color:var(--amber);font-weight:700;letter-spacing:.5px;">SPREAD THE LIGHT</div></div>
+           <div style="font-size:10px;color:var(--orange);font-weight:700;letter-spacing:.5px;">SPREAD THE LIGHT</div></div>
     </div>
-    <button onclick="showPage('login')" class="btn-ghost" style="font-size:13px;display:flex;align-items:center;gap:6px;">
+    <button onclick="showPage('login')" class="btn-outline" style="font-size:13px;display:flex;align-items:center;gap:6px;border-color:rgba(200,53,10,.4);color:var(--yellow2);">
       <i data-lucide="log-in" style="width:14px;height:14px;"></i> Staff Login
     </button>
   </nav>
-  <div style="flex:1;display:flex;align-items:flex-start;justify-content:center;padding:28px 16px;position:relative;z-index:1;">
+  <div style="flex:1;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px;position:relative;z-index:1;">
     <div style="width:100%;max-width:680px;">
-      <div style="text-align:center;margin-bottom:24px;">
-        <div class="badge badge-amber" style="margin:0 auto 12px;display:inline-flex;"><i data-lucide="shield-check" style="width:12px;height:12px;"></i> Secure &amp; Confidential</div>
-        <h1 style="font-size:26px;font-weight:900;color:var(--text1);margin-bottom:8px;">Share Your Feedback</h1>
-        <p style="font-size:14px;color:var(--text2);">Your voice matters. All submissions are routed to the appropriate authority.</p>
+      <div style="text-align:center;margin-bottom:28px;">
+        <div class="badge badge-indigo" style="margin:0 auto 12px;display:inline-flex;border-radius:99px;padding:3px 12px;"><i data-lucide="shield-check" style="width:12px;height:12px;"></i> Secure &amp; Confidential</div>
+        <h1 style="font-size:28px;font-weight:900;margin-bottom:8px;background:linear-gradient(135deg,#EFF6FF,#93C5FD,#F97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Share Your Feedback</h1>
+        <p style="font-size:14px;color:var(--text2);">Your voice matters. All submissions are handled with care and confidentiality.</p>
       </div>
       <form id="feedback-form" onsubmit="handleSubmit(event)">
-        <div class="card" style="padding:24px;">
-          <!-- Category + Topic -->
+        <div class="card" style="padding:28px;">
+          <!-- Row 1: Category + Topic -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="frow">
-            <div><label class="flabel" for="f-category">Category *</label>
+            <div><label class="flabel">Category *</label>
               <select id="f-category" class="inp" onchange="updateTopics();updateRoutingPreview();" required>
                 <option value="">Select category…</option>
                 <option>Academic</option><option>Teacher Behaviour</option><option>Infrastructure</option>
                 <option>Discipline</option><option>Transport</option><option>Administration</option><option>Suggestion</option>
               </select></div>
-            <div><label class="flabel" for="f-topic">Topic *</label>
+            <div><label class="flabel">Topic *</label>
               <select id="f-topic" class="inp" onchange="updateRoutingPreview();" required>
                 <option value="">Select category first…</option>
               </select></div>
           </div>
-          <!-- CLASS SELECTION: CHIPS -->
-          <div class="frow">
-            <label class="flabel">Class / Role *</label>
-            <div id="form-class-chips" class="form-chips-grid" style="margin-top:2px;"></div>
-            <input type="hidden" id="f-class"/>
-            <p style="font-size:11px;color:var(--text3);margin-top:6px;"><i data-lucide="touch" style="width:10px;height:10px;display:inline;"></i> Tap to select your class</p>
+          <!-- Row 2: Class + Section -->
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;" class="frow">
+            <div><label class="flabel">Class / Role *</label>
+              <select id="f-class" class="inp" onchange="updateSections();updateRoutingPreview();" required>
+                <option value="">Select class…</option>
+              </select></div>
+            <div><label class="flabel">Section</label>
+              <select id="f-section" class="inp">
+                <option value="N/A">N/A</option>
+              </select></div>
           </div>
-          <!-- SECTION: CHIPS (dynamic) -->
-          <div class="frow" id="section-row" style="display:none;">
-            <label class="flabel">Section *</label>
-            <div id="form-section-chips" class="form-chips-grid" style="margin-top:2px;"></div>
-            <input type="hidden" id="f-section" value="N/A"/>
-          </div>
-          <!-- Message -->
-          <div class="frow"><label class="flabel" for="f-message">Your Message *</label>
+          <!-- Row 3: Message -->
+          <div class="frow"><label class="flabel">Your Message *</label>
             <textarea id="f-message" class="inp" rows="4" placeholder="Describe your concern in detail (min. 10 characters)…" style="resize:vertical;" required></textarea></div>
-          <!-- Email -->
+          <!-- Row 4: Email -->
           <div class="frow">
-            <label class="flabel" for="f-email">Email Address
-              <span id="email-type-badge" style="margin-left:8px;"></span></label>
+            <label class="flabel">Email Address <span id="email-type-badge" style="margin-left:8px;"></span></label>
             <input id="f-email" class="inp" type="email" placeholder="your.email@example.com" oninput="updateEmailBadge();updateRoutingPreview();"/>
             <p style="font-size:11px;color:var(--text3);margin-top:4px;">School email (@stmargaretsrsecschool.com) stores in SchoolResponses sheet</p>
           </div>
-          <!-- Anonymous Toggle -->
+          <!-- Anonymous -->
           <div class="frow">
             <div class="anon-wrap" id="anon-wrap" onclick="toggleAnonymous()">
               <div style="display:flex;align-items:center;gap:12px;">
                 <i data-lucide="user-x" id="anon-icon" style="width:20px;height:20px;color:#6366f1;"></i>
-                <div><div id="anon-label" style="font-size:14px;font-weight:700;color:var(--text1);">Submit Anonymously</div>
+                <div><div id="anon-label" style="font-size:14px;font-weight:700;">Submit Anonymously</div>
                      <div id="anon-sub" style="font-size:11.5px;color:var(--text2);margin-top:1px;">Hide your name &amp; phone number</div></div>
               </div>
               <div class="pill" id="anon-pill"></div>
             </div>
           </div>
-          <div class="frow field-row expanded" id="row-name"><label class="flabel" for="f-name">Full Name *</label>
+          <div class="frow field-row expanded" id="row-name"><label class="flabel">Full Name *</label>
             <input id="f-name" class="inp" type="text" placeholder="Your full name" required/></div>
-          <div class="frow field-row expanded" id="row-phone"><label class="flabel" for="f-phone">Phone Number *</label>
+          <div class="frow field-row expanded" id="row-phone"><label class="flabel">Phone Number *</label>
             <input id="f-phone" class="inp" type="tel" placeholder="10-digit mobile number" maxlength="10" required/></div>
-          <!-- ROUTING PREVIEW -->
-          <div id="routing-preview" class="routing-card hidden" style="margin-top:4px;">
+          <!-- Routing Preview -->
+          <div id="routing-preview" class="routing-card hidden">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-              <i data-lucide="navigation" style="width:16px;height:16px;color:var(--amber);"></i>
+              <i data-lucide="navigation" style="width:16px;height:16px;color:var(--orange);"></i>
               <span style="font-size:13px;font-weight:800;">Live Routing Preview</span>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12.5px;">
               <div><div style="color:var(--text3);font-weight:600;margin-bottom:3px;">Assigned To</div>
                 <div id="prev-name" style="font-weight:800;font-size:14px;"></div>
                 <div id="prev-role-badge" style="margin-top:4px;"></div></div>
-              <div><div style="color:var(--text3);font-weight:600;margin-bottom:3px;">Reason</div>
-                <div id="prev-reason" style="color:var(--text2);"></div></div>
+              <div><div style="color:var(--text3);font-weight:600;margin-bottom:3px;">Reason</div><div id="prev-reason" style="color:var(--text2);"></div></div>
               <div><div style="color:var(--text3);font-weight:600;margin-bottom:3px;">Priority</div><div id="prev-priority"></div></div>
               <div><div style="color:var(--text3);font-weight:600;margin-bottom:3px;">Submission Type</div><div id="prev-type" style="color:var(--text2);"></div></div>
             </div>
@@ -351,64 +478,58 @@ html,body{background:var(--bg);color:var(--text1);min-height:100vh;overflow-x:hi
           </button>
         </div>
       </form>
-      <p style="text-align:center;font-size:12px;color:var(--text3);margin-top:14px;">IP address is recorded to prevent spam. Submissions are routed to the appropriate authority.</p>
+      <p style="text-align:center;font-size:12px;color:var(--text3);margin-top:16px;">IP address is recorded to prevent spam. Submissions are routed to the appropriate authority.</p>
     </div>
   </div>
 </section>
 
-<!-- ═══════════ PAGE: LOGIN ═══════════ -->
+<!-- PAGE: LOGIN -->
 <section id="page-login" class="page" style="flex-direction:column;">
-  <div style="position:relative;z-index:1;width:100%;max-width:400px;margin:auto;padding:20px;">
-    <button onclick="showPage('home')" class="btn-ghost btn-sm" style="margin-bottom:20px;display:inline-flex;align-items:center;gap:6px;">
-      <i data-lucide="arrow-left" style="width:13px;height:13px;"></i> Back
-    </button>
+  <div style="position:relative;z-index:1;width:100%;max-width:420px;margin:auto;padding:20px;">
+    <button onclick="showPage('home')" class="btn-ghost btn-sm" style="margin-bottom:20px;display:inline-flex;align-items:center;gap:6px;"><i data-lucide="arrow-left" style="width:13px;height:13px;"></i> Back</button>
     <div class="card" style="padding:32px;">
       <div style="text-align:center;margin-bottom:28px;">
-        <img src="logo.png" alt="Logo" style="width:54px;height:54px;border-radius:11px;object-fit:contain;background:#fff;padding:5px;margin:0 auto 14px;" onerror="this.style.display='none'"/>
-        <h2 style="font-size:22px;font-weight:900;">Staff Portal</h2>
+        <img src="logo.png" style="width:56px;height:56px;border-radius:12px;object-fit:contain;background:#fff;padding:5px;margin:0 auto 14px;" onerror="this.style.display='none'"/>
+        <h2 style="font-size:22px;font-weight:900;background:linear-gradient(135deg,#60A5FA,#F97316,#F5A623);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:900;">Staff Portal</h2>
         <p style="font-size:13px;color:var(--text2);margin-top:4px;">Sign in to access your dashboard</p>
       </div>
       <form id="login-form" onsubmit="handleLogin(event)">
         <div class="frow"><label class="flabel">Email</label><input id="l-email" class="inp" type="email" placeholder="your.email@school.com" required/></div>
-        <div class="frow"><label class="flabel">Password</label><input id="l-password" class="inp" type="password" placeholder="Enter password" required/></div>
+        <div class="frow"><label class="flabel">Password</label><input id="l-password" class="inp" type="password" placeholder="Enter your password" required/></div>
         <button type="submit" class="btn-amber" id="login-btn" style="width:100%;margin-top:8px;">
           <span id="login-icon" style="display:inline-flex;align-items:center;gap:8px;"><i data-lucide="log-in" style="width:15px;height:15px;"></i> Sign In</span>
           <span id="login-spin" class="spin hidden"></span>
         </button>
       </form>
-      <p style="font-size:11.5px;color:var(--text3);text-align:center;margin-top:14px;">Role is automatically detected from credentials</p>
+      <p style="font-size:11.5px;color:var(--text3);text-align:center;margin-top:16px;">Role is automatically detected from your credentials</p>
     </div>
   </div>
 </section>
 
-<!-- ═══════════ PAGE: SUCCESS ═══════════ -->
+<!-- PAGE: SUCCESS -->
 <section id="page-success" class="page" style="flex-direction:column;">
-  <div style="position:relative;z-index:1;width:100%;max-width:460px;margin:auto;padding:20px;text-align:center;">
-    <div class="card" style="padding:40px 28px;">
-      <div style="width:62px;height:62px;background:rgba(34,197,94,.15);border:2px solid rgba(34,197,94,.3);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
-        <i data-lucide="check-circle" style="width:30px;height:30px;color:#4ade80;"></i>
+  <div style="position:relative;z-index:1;width:100%;max-width:480px;margin:auto;padding:20px;text-align:center;">
+    <div class="card" style="padding:40px 32px;">
+      <div style="width:64px;height:64px;background:rgba(34,197,94,.15);border:2px solid rgba(34,197,94,.3);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+        <i data-lucide="check-circle" style="width:32px;height:32px;color:#4ade80;"></i>
       </div>
       <h2 style="font-size:22px;font-weight:900;margin-bottom:10px;">Submitted Successfully!</h2>
       <div id="success-msg" style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:8px;"></div>
-      <div id="success-assign" style="font-size:13px;color:var(--text3);margin-bottom:22px;"></div>
-      <button onclick="showPage('home')" class="btn-amber" style="width:100%;">
-        <span style="display:inline-flex;align-items:center;gap:8px;"><i data-lucide="home" style="width:15px;height:15px;"></i> Return Home</span>
-      </button>
+      <div id="success-assign" style="font-size:13px;color:var(--text3);margin-bottom:24px;"></div>
+      <button onclick="showPage('home')" class="btn-amber" style="width:100%;"><span style="display:inline-flex;align-items:center;gap:8px;"><i data-lucide="home" style="width:15px;height:15px;"></i> Return Home</span></button>
     </div>
   </div>
 </section>
 
-<!-- MACRO for dashboard filter panel (used in each dashboard) -->
-<!-- ═══════════ PAGE: ADMIN ═══════════ -->
+<!-- PAGE: ADMIN -->
 <section id="page-admin" class="page dash-page">
   <div class="sb-overlay" id="sb-overlay-admin" onclick="closeSidebar('admin')"></div>
   <aside class="sidebar" id="sidebar-admin">
     <div class="sb-logo"><img src="logo.png" onerror="this.style.display='none'" style="width:40px;height:40px;border-radius:9px;object-fit:contain;background:#fff;padding:3px;"/>
       <div class="sb-logo-text"><div class="school-name">St. Margaret</div><div class="school-tag">ADMIN CONSOLE</div></div></div>
     <div class="sb-user"><div style="display:flex;align-items:center;gap:8px;">
-      <div style="width:32px;height:32px;background:linear-gradient(135deg,#f59e0b,#f97316);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#000;" id="admin-avatar">A</div>
-      <div><div class="sb-user-name" id="admin-name">Administrator</div>
-        <div class="sb-user-role"><span class="badge badge-amber" style="font-size:10px;">Admin</span></div></div>
+      <div style="width:32px;height:32px;background:linear-gradient(135deg,#1D4ED8,#2563EB,#F97316);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff;" id="admin-avatar">A</div>
+      <div><div class="sb-user-name" id="admin-name">Administrator</div><div><span class="badge badge-blue" style="font-size:10px;">Admin</span></div></div>
     </div></div>
     <nav class="sb-nav">
       <button class="sb-item active" id="sb-admin-overview" onclick="switchAdminTab('overview')"><i data-lucide="layout-dashboard"></i> Overview</button>
@@ -425,78 +546,58 @@ html,body{background:var(--bg);color:var(--text1);min-height:100vh;overflow-x:hi
     <div class="mob-topbar">
       <button class="mob-ham" onclick="openSidebar('admin')"><i data-lucide="menu" style="width:22px;height:22px;"></i></button>
       <div style="font-size:14px;font-weight:800;" id="admin-tab-title">Overview</div>
-      <button onclick="loadAdminDashboard()" class="btn-ghost btn-sm" style="margin-left:auto;display:flex;align-items:center;gap:4px;"><i data-lucide="refresh-cw" style="width:13px;height:13px;"></i></button>
+      <button onclick="loadAdminDashboard()" class="btn-ghost btn-sm" style="margin-left:auto;display:flex;align-items:center;gap:4px;"><i data-lucide="refresh-cw" style="width:13px;height:13px;"></i> Refresh</button>
     </div>
     <div class="dash-content">
-      <!-- Overview Tab -->
       <div class="dash-tab active" id="tab-admin-overview">
-        <div class="stat-grid" id="admin-stat-grid">
-          <div class="stat-card"><div class="stat-icon" style="background:rgba(245,158,11,.15);"><i data-lucide="inbox" style="width:18px;height:18px;color:var(--amber);"></i></div><div class="stat-num" id="astat-total">—</div><div class="stat-label">Total</div></div>
-          <div class="stat-card"><div class="stat-icon" style="background:rgba(251,191,36,.15);"><i data-lucide="clock" style="width:18px;height:18px;color:#fbbf24;"></i></div><div class="stat-num" id="astat-pending">—</div><div class="stat-label">Pending</div></div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(200,53,10,.18);"><i data-lucide="inbox" style="width:18px;height:18px;color:var(--orange);"></i></div><div class="stat-num" id="astat-total">—</div><div class="stat-label">Total Submissions</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(245,166,35,.18);"><i data-lucide="clock" style="width:18px;height:18px;color:#F5A623;"></i></div><div class="stat-num" id="astat-pending">—</div><div class="stat-label">Pending</div></div>
           <div class="stat-card"><div class="stat-icon" style="background:rgba(34,197,94,.15);"><i data-lucide="check-circle" style="width:18px;height:18px;color:#4ade80;"></i></div><div class="stat-num" id="astat-resolved">—</div><div class="stat-label">Resolved</div></div>
-          <div class="stat-card"><div class="stat-icon" style="background:rgba(249,115,22,.15);"><i data-lucide="alert-triangle" style="width:18px;height:18px;color:#fb923c;"></i></div><div class="stat-num" id="astat-escalated">—</div><div class="stat-label">Escalated</div></div>
-          <div class="stat-card"><div class="stat-icon" style="background:rgba(99,102,241,.15);"><i data-lucide="user-x" style="width:18px;height:18px;color:#818cf8;"></i></div><div class="stat-num" id="astat-anon">—</div><div class="stat-label">Anonymous</div></div>
-          <div class="stat-card"><div class="stat-icon" style="background:rgba(59,130,246,.15);"><i data-lucide="school" style="width:18px;height:18px;color:#60a5fa;"></i></div><div class="stat-num" id="astat-school">—</div><div class="stat-label">School Emails</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(200,53,10,.18);"><i data-lucide="alert-triangle" style="width:18px;height:18px;color:#FB923C;"></i></div><div class="stat-num" id="astat-escalated">—</div><div class="stat-label">Escalated</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(139,26,26,.2);"><i data-lucide="user-x" style="width:18px;height:18px;color:#F4A0A0;"></i></div><div class="stat-num" id="astat-anon">—</div><div class="stat-label">Anonymous</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(245,166,35,.18);"><i data-lucide="school" style="width:18px;height:18px;color:#F5A623;"></i></div><div class="stat-num" id="astat-school">—</div><div class="stat-label">School Emails</div></div>
         </div>
-        <div class="card2" style="padding:18px;"><div style="font-size:14px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px;"><i data-lucide="activity" style="width:16px;height:16px;color:var(--amber);"></i> Recent Submissions</div><div id="admin-recent-list"></div></div>
+        <div class="card2" style="padding:20px;"><div style="font-size:14px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px;"><i data-lucide="activity" style="width:16px;height:16px;color:var(--orange);"></i> Recent Submissions</div><div id="admin-recent-list"></div></div>
       </div>
-      <!-- Submissions Tab -->
       <div class="dash-tab" id="tab-admin-submissions">
-        <!-- Filter Panel -->
-        <div class="filter-panel">
-          <div class="filters-row">
-            <input class="filter-inp" id="admin-search" placeholder="🔍  Search…" oninput="onFilterChange('admin')" style="flex:1;min-width:140px;"/>
-            <select class="filter-inp" id="admin-f-cat" onchange="onFilterChange('admin')"><option value="">All Categories</option>
-              <option>Academic</option><option>Teacher Behaviour</option><option>Infrastructure</option>
-              <option>Discipline</option><option>Transport</option><option>Administration</option><option>Suggestion</option></select>
-            <select class="filter-inp" id="admin-f-status" onchange="onFilterChange('admin')"><option value="">All Statuses</option>
-              <option>Pending</option><option>In Review</option><option>Escalated</option><option>Resolved</option><option>Closed</option></select>
-            <select class="filter-inp" id="admin-f-role" onchange="onFilterChange('admin')"><option value="">All Roles</option>
-              <option value="Principal">Principal</option><option value="Coordinator">Coordinator</option></select>
-            <select class="filter-inp" id="admin-f-sheet" onchange="onFilterChange('admin')"><option value="">All Sources</option>
-              <option value="PublicResponses">Public</option><option value="SchoolResponses">School</option></select>
-          </div>
-          <div class="filters-row">
-            <select class="filter-inp" id="admin-date-preset" onchange="onDatePresetChange('admin')">
-              <option value="">📅 All Time</option><option value="today">Today</option>
-              <option value="yesterday">Yesterday</option><option value="7days">Last 7 Days</option>
-              <option value="30days">Last 30 Days</option><option value="thisMonth">This Month</option>
-              <option value="prevMonth">Previous Month</option><option value="thisYear">This Year</option>
-              <option value="custom">Custom Range…</option>
-            </select>
-            <div id="admin-custom-range" style="display:none;display:flex;gap:6px;align-items:center;">
-              <span style="font-size:12px;color:var(--text3);white-space:nowrap;">From</span>
-              <input type="date" id="admin-date-from" class="filter-inp" onchange="onFilterChange('admin')"/>
-              <span style="font-size:12px;color:var(--text3);">To</span>
-              <input type="date" id="admin-date-to" class="filter-inp" onchange="onFilterChange('admin')"/>
-            </div>
-            <select class="filter-inp" id="admin-f-sort" onchange="onFilterChange('admin')">
-              <option value="newest">⬇ Newest First</option><option value="oldest">⬆ Oldest First</option></select>
-            <button onclick="resetFilters('admin')" class="btn-ghost btn-sm" style="display:inline-flex;align-items:center;gap:4px;white-space:nowrap;">
-              <i data-lucide="x-circle" style="width:12px;height:12px;"></i> Reset</button>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-top:4px;">
-            <div id="admin-filter-chips" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
-            <div id="admin-result-count" class="result-count"></div>
-          </div>
+        <div class="filters-bar">
+          <input class="filter-inp" id="admin-search" placeholder="🔍  Search…" oninput="applyAndRender('admin')" style="flex:1;min-width:160px;"/>
+          <select class="filter-inp" id="admin-f-cat" onchange="applyAndRender('admin')"><option value="">All Categories</option>
+            <option>Academic</option><option>Teacher Behaviour</option><option>Infrastructure</option>
+            <option>Discipline</option><option>Transport</option><option>Administration</option><option>Suggestion</option></select>
+          <select class="filter-inp" id="admin-f-status" onchange="applyAndRender('admin')"><option value="">All Statuses</option>
+            <option>Pending</option><option>In Review</option><option>Escalated</option><option>Resolved</option><option>Closed</option></select>
+          <select class="filter-inp" id="admin-f-role" onchange="applyAndRender('admin')"><option value="">All Roles</option>
+            <option value="Principal">Principal</option><option value="Coordinator">Coordinator</option></select>
+          <select class="filter-inp" id="admin-f-sheet" onchange="applyAndRender('admin')"><option value="">All Sources</option>
+            <option value="PublicResponses">Public</option><option value="SchoolResponses">School</option></select>
+          <select class="filter-inp" id="admin-date-preset" onchange="onDatePreset('admin')">
+            <option value="">📅 All Time</option><option value="today">Today</option><option value="yesterday">Yesterday</option>
+            <option value="7days">Last 7 Days</option><option value="30days">Last 30 Days</option>
+            <option value="thisMonth">This Month</option><option value="prevMonth">Last Month</option>
+            <option value="thisYear">This Year</option><option value="custom">Custom Range…</option></select>
+          <button onclick="resetFilters('admin')" class="btn-ghost btn-sm" style="display:inline-flex;align-items:center;gap:4px;white-space:nowrap;"><i data-lucide="x-circle" style="width:12px;height:12px;"></i> Reset</button>
+        </div>
+        <div id="admin-custom-range" style="display:none;" class="filters-bar">
+          <span style="font-size:12px;color:var(--text3);">From</span>
+          <input type="date" id="admin-date-from" class="filter-inp" onchange="applyAndRender('admin')"/>
+          <span style="font-size:12px;color:var(--text3);">To</span>
+          <input type="date" id="admin-date-to" class="filter-inp" onchange="applyAndRender('admin')"/>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:6px;">
+          <div id="admin-filter-chips" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+          <span id="admin-result-count" style="font-size:12px;color:var(--text3);font-weight:600;"></span>
         </div>
         <div id="admin-sub-list"></div>
       </div>
-      <!-- Analytics Tab -->
       <div class="dash-tab" id="tab-admin-analytics">
-        <div class="an-date-row">
-          <span style="font-size:12px;font-weight:700;color:var(--text2);">Date Range:</span>
-          <select class="filter-inp" id="an-admin-date" onchange="onAnalyticsDateChange('admin')" style="font-size:12px;">
-            <option value="">All Time</option><option value="today">Today</option>
-            <option value="7days">Last 7 Days</option><option value="30days">Last 30 Days</option>
-            <option value="thisMonth">This Month</option><option value="prevMonth">Previous Month</option>
-            <option value="thisYear">This Year</option><option value="custom">Custom Range…</option>
-          </select>
-          <div id="an-admin-custom" style="display:none;display:flex;gap:6px;align-items:center;">
-            <input type="date" id="an-admin-from" class="filter-inp" onchange="onAnalyticsDateChange('admin')"/>
-            <span style="font-size:12px;color:var(--text3);">–</span>
-            <input type="date" id="an-admin-to" class="filter-inp" onchange="onAnalyticsDateChange('admin')"/>
-          </div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:12px;border:1px solid var(--border);">
+          <span style="font-size:12px;font-weight:700;color:var(--text2);">📅 Analytics Range:</span>
+          <select class="filter-inp" id="an-date-preset" onchange="onAnalyticsDateChange()" style="font-size:12px;">
+            <option value="">All Time</option><option value="today">Today</option><option value="7days">Last 7 Days</option>
+            <option value="30days">Last 30 Days</option><option value="thisMonth">This Month</option>
+            <option value="prevMonth">Last Month</option><option value="thisYear">This Year</option></select>
         </div>
         <div class="stat-grid">
           <div class="stat-card"><div class="stat-num" id="an-total">—</div><div class="stat-label">Total</div></div>
@@ -505,33 +606,28 @@ html,body{background:var(--bg);color:var(--text1);min-height:100vh;overflow-x:hi
           <div class="stat-card"><div class="stat-num" id="an-resolved">—</div><div class="stat-label">Resolved</div></div>
           <div class="stat-card"><div class="stat-num" id="an-escalated">—</div><div class="stat-label">Escalated</div></div>
           <div class="stat-card"><div class="stat-num" id="an-anon">—</div><div class="stat-label">Anonymous</div></div>
-          <div class="stat-card"><div class="stat-num" id="an-school">—</div><div class="stat-label">School Emails</div></div>
-          <div class="stat-card"><div class="stat-num" id="an-public">—</div><div class="stat-label">Public</div></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-          <div class="card2" style="padding:18px;"><div style="font-size:12px;font-weight:800;margin-bottom:10px;color:var(--text2);">BY CATEGORY</div><div class="chart-wrap"><canvas id="chart-cat"></canvas></div></div>
-          <div class="card2" style="padding:18px;"><div style="font-size:12px;font-weight:800;margin-bottom:10px;color:var(--text2);">BY PRIORITY</div><div class="chart-wrap"><canvas id="chart-sev"></canvas></div></div>
+          <div class="card2" style="padding:18px;"><div style="font-size:13px;font-weight:800;margin-bottom:12px;color:var(--text2);">BY CATEGORY</div><div class="chart-wrap"><canvas id="chart-cat"></canvas></div></div>
+          <div class="card2" style="padding:18px;"><div style="font-size:13px;font-weight:800;margin-bottom:12px;color:var(--text2);">BY PRIORITY</div><div class="chart-wrap"><canvas id="chart-sev"></canvas></div></div>
         </div>
-        <div class="card2" style="padding:18px;margin-bottom:16px;"><div style="font-size:12px;font-weight:800;margin-bottom:10px;color:var(--text2);">SUBMISSIONS TREND (14 DAYS)</div><div class="chart-wrap" style="height:200px;"><canvas id="chart-trend"></canvas></div></div>
+        <div class="card2" style="padding:18px;margin-bottom:16px;"><div style="font-size:13px;font-weight:800;margin-bottom:12px;color:var(--text2);">SUBMISSIONS TREND (LAST 14 DAYS)</div><div class="chart-wrap" style="height:200px;"><canvas id="chart-trend"></canvas></div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="card2" style="padding:18px;"><div style="font-size:12px;font-weight:800;margin-bottom:10px;color:var(--text2);">BY HANDLER</div><div class="chart-wrap"><canvas id="chart-handler"></canvas></div></div>
-          <div class="card2" style="padding:18px;"><div style="font-size:12px;font-weight:800;margin-bottom:10px;color:var(--text2);">SCHOOL vs PUBLIC</div><div class="chart-wrap"><canvas id="chart-source"></canvas></div></div>
+          <div class="card2" style="padding:18px;"><div style="font-size:13px;font-weight:800;margin-bottom:12px;color:var(--text2);">BY HANDLER</div><div class="chart-wrap"><canvas id="chart-handler"></canvas></div></div>
+          <div class="card2" style="padding:18px;"><div style="font-size:13px;font-weight:800;margin-bottom:12px;color:var(--text2);">SCHOOL vs PUBLIC</div><div class="chart-wrap"><canvas id="chart-source"></canvas></div></div>
         </div>
       </div>
-      <!-- Users Tab -->
       <div class="dash-tab" id="tab-admin-users">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
           <h3 style="font-size:16px;font-weight:800;">Users &amp; Credentials</h3>
-          <button onclick="openAddUserModal()" class="btn-indigo" style="display:flex;align-items:center;gap:7px;font-size:13px;padding:9px 16px;"><i data-lucide="user-plus" style="width:14px;height:14px;"></i> Add User</button>
+          <button onclick="openAddUserModal()" class="btn-amber" style="display:flex;align-items:center;gap:7px;font-size:13px;padding:9px 16px;"><i data-lucide="user-plus" style="width:14px;height:14px;"></i> Add User</button>
         </div>
         <div class="card2" style="overflow-x:auto;"><table class="user-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Class Range</th><th>Created</th><th>Actions</th></tr></thead><tbody id="users-tbody"></tbody></table></div>
-        <p style="font-size:12px;color:var(--text3);margin-top:10px;">Login uses email + password. System auto-detects role from credentials.</p>
       </div>
-      <!-- Collections Tab -->
       <div class="dash-tab" id="tab-admin-collections">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
           <h3 style="font-size:16px;font-weight:800;">My Collections</h3>
-          <button onclick="promptCreateCollection()" class="btn-indigo" style="display:flex;align-items:center;gap:7px;font-size:13px;padding:9px 16px;"><i data-lucide="folder-plus" style="width:14px;height:14px;"></i> New Collection</button>
+          <button onclick="promptCreateCollection()" class="btn-amber" style="display:flex;align-items:center;gap:7px;font-size:13px;padding:9px 16px;"><i data-lucide="folder-plus" style="width:14px;height:14px;"></i> New Collection</button>
         </div>
         <div id="admin-collections-list"></div>
       </div>
@@ -539,16 +635,15 @@ html,body{background:var(--bg);color:var(--text1);min-height:100vh;overflow-x:hi
   </div>
 </section>
 
-<!-- ═══════════ PAGE: PRINCIPAL ═══════════ -->
+<!-- PAGE: PRINCIPAL -->
 <section id="page-principal" class="page dash-page">
   <div class="sb-overlay" id="sb-overlay-principal" onclick="closeSidebar('principal')"></div>
   <aside class="sidebar" id="sidebar-principal">
     <div class="sb-logo"><img src="logo.png" onerror="this.style.display='none'" style="width:40px;height:40px;border-radius:9px;object-fit:contain;background:#fff;padding:3px;"/>
       <div class="sb-logo-text"><div class="school-name">St. Margaret</div><div class="school-tag">PRINCIPAL PANEL</div></div></div>
     <div class="sb-user"><div style="display:flex;align-items:center;gap:8px;">
-      <div style="width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff;" id="principal-avatar">P</div>
-      <div><div class="sb-user-name" id="principal-name">Principal</div>
-        <div><span class="badge badge-indigo" style="font-size:10px;">Principal</span></div></div>
+      <div style="width:32px;height:32px;background:linear-gradient(135deg,#1E3A8A,#2563EB);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff;" id="principal-avatar">P</div>
+      <div><div class="sb-user-name" id="principal-name">Principal</div><div><span class="badge badge-indigo" style="font-size:10px;">Principal</span></div></div>
     </div></div>
     <nav class="sb-nav">
       <button class="sb-item active" id="sb-principal-submissions" onclick="switchRoleTab('principal','submissions')"><i data-lucide="inbox"></i> My Submissions</button>
@@ -571,44 +666,33 @@ html,body{background:var(--bg);color:var(--text1);min-height:100vh;overflow-x:hi
           <div class="stat-card"><div class="stat-num" id="pstat-resolved">—</div><div class="stat-label">Resolved</div></div>
           <div class="stat-card"><div class="stat-num" id="pstat-escalated">—</div><div class="stat-label">Escalated</div></div>
         </div>
-        <div class="filter-panel">
-          <div class="filters-row">
-            <input class="filter-inp" id="principal-search" placeholder="🔍  Search…" oninput="onFilterChange('principal')" style="flex:1;min-width:130px;"/>
-            <select class="filter-inp" id="principal-f-status" onchange="onFilterChange('principal')"><option value="">All Statuses</option>
-              <option>Pending</option><option>In Review</option><option>Escalated</option><option>Resolved</option><option>Closed</option></select>
-            <select class="filter-inp" id="principal-f-cat" onchange="onFilterChange('principal')"><option value="">All Categories</option>
-              <option>Academic</option><option>Teacher Behaviour</option><option>Infrastructure</option>
-              <option>Discipline</option><option>Transport</option><option>Administration</option><option>Suggestion</option></select>
-            <select class="filter-inp" id="principal-date-preset" onchange="onDatePresetChange('principal')">
-              <option value="">📅 All Time</option><option value="today">Today</option>
-              <option value="yesterday">Yesterday</option><option value="7days">Last 7 Days</option>
-              <option value="30days">Last 30 Days</option><option value="thisMonth">This Month</option>
-              <option value="prevMonth">Previous Month</option><option value="thisYear">This Year</option>
-              <option value="custom">Custom Range…</option></select>
-            <button onclick="resetFilters('principal')" class="btn-ghost btn-sm" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="x-circle" style="width:12px;height:12px;"></i> Reset</button>
-          </div>
-          <div id="principal-custom-range" style="display:none;" class="filters-row">
-            <span style="font-size:12px;color:var(--text3);">From</span>
-            <input type="date" id="principal-date-from" class="filter-inp" onchange="onFilterChange('principal')"/>
-            <span style="font-size:12px;color:var(--text3);">To</span>
-            <input type="date" id="principal-date-to" class="filter-inp" onchange="onFilterChange('principal')"/>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;">
-            <div id="principal-filter-chips" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
-            <div id="principal-result-count" class="result-count"></div>
-          </div>
+        <div class="filters-bar">
+          <input class="filter-inp" id="principal-search" placeholder="🔍  Search…" oninput="applyAndRender('principal')" style="flex:1;min-width:140px;"/>
+          <select class="filter-inp" id="principal-f-status" onchange="applyAndRender('principal')"><option value="">All Statuses</option>
+            <option>Pending</option><option>In Review</option><option>Escalated</option><option>Resolved</option><option>Closed</option></select>
+          <select class="filter-inp" id="principal-f-cat" onchange="applyAndRender('principal')"><option value="">All Categories</option>
+            <option>Academic</option><option>Teacher Behaviour</option><option>Infrastructure</option>
+            <option>Discipline</option><option>Transport</option><option>Administration</option><option>Suggestion</option></select>
+          <select class="filter-inp" id="principal-date-preset" onchange="onDatePreset('principal')">
+            <option value="">📅 All Time</option><option value="today">Today</option><option value="yesterday">Yesterday</option>
+            <option value="7days">Last 7 Days</option><option value="30days">Last 30 Days</option>
+            <option value="thisMonth">This Month</option><option value="prevMonth">Last Month</option>
+            <option value="thisYear">This Year</option><option value="custom">Custom Range…</option></select>
+          <button onclick="resetFilters('principal')" class="btn-ghost btn-sm" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="x-circle" style="width:12px;height:12px;"></i> Reset</button>
+        </div>
+        <div id="principal-custom-range" style="display:none;" class="filters-bar">
+          <span style="font-size:12px;color:var(--text3);">From</span>
+          <input type="date" id="principal-date-from" class="filter-inp" onchange="applyAndRender('principal')"/>
+          <span style="font-size:12px;color:var(--text3);">To</span>
+          <input type="date" id="principal-date-to" class="filter-inp" onchange="applyAndRender('principal')"/>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:6px;">
+          <div id="principal-filter-chips" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+          <span id="principal-result-count" style="font-size:12px;color:var(--text3);font-weight:600;"></span>
         </div>
         <div id="principal-sub-list"></div>
       </div>
       <div class="dash-tab" id="tab-principal-analytics">
-        <div class="an-date-row">
-          <span style="font-size:12px;font-weight:700;color:var(--text2);">Date Range:</span>
-          <select class="filter-inp" id="an-principal-date" onchange="onAnalyticsDateChange('principal')" style="font-size:12px;">
-            <option value="">All Time</option><option value="today">Today</option>
-            <option value="7days">Last 7 Days</option><option value="30days">Last 30 Days</option>
-            <option value="thisMonth">This Month</option><option value="prevMonth">Previous Month</option>
-            <option value="thisYear">This Year</option></select>
-        </div>
         <div class="stat-grid">
           <div class="stat-card"><div class="stat-num" id="pan-total">—</div><div class="stat-label">Total</div></div>
           <div class="stat-card"><div class="stat-num" id="pan-pending">—</div><div class="stat-label">Pending</div></div>
@@ -616,8 +700,8 @@ html,body{background:var(--bg);color:var(--text1);min-height:100vh;overflow-x:hi
           <div class="stat-card"><div class="stat-num" id="pan-escalated">—</div><div class="stat-label">Escalated</div></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="card2" style="padding:18px;"><div style="font-size:12px;font-weight:800;margin-bottom:10px;color:var(--text2);">BY CATEGORY</div><div class="chart-wrap"><canvas id="p-chart-cat"></canvas></div></div>
-          <div class="card2" style="padding:18px;"><div style="font-size:12px;font-weight:800;margin-bottom:10px;color:var(--text2);">BY PRIORITY</div><div class="chart-wrap"><canvas id="p-chart-sev"></canvas></div></div>
+          <div class="card2" style="padding:18px;"><div style="font-size:13px;font-weight:800;margin-bottom:12px;color:var(--text2);">BY CATEGORY</div><div class="chart-wrap"><canvas id="p-chart-cat"></canvas></div></div>
+          <div class="card2" style="padding:18px;"><div style="font-size:13px;font-weight:800;margin-bottom:12px;color:var(--text2);">BY PRIORITY</div><div class="chart-wrap"><canvas id="p-chart-sev"></canvas></div></div>
         </div>
       </div>
       <div class="dash-tab" id="tab-principal-collections">
@@ -631,7 +715,7 @@ html,body{background:var(--bg);color:var(--text1);min-height:100vh;overflow-x:hi
   </div>
 </section>
 
-<!-- ═══════════ PAGE: COORDINATOR ═══════════ -->
+<!-- PAGE: COORDINATOR -->
 <section id="page-coordinator" class="page dash-page">
   <div class="sb-overlay" id="sb-overlay-coordinator" onclick="closeSidebar('coordinator')"></div>
   <aside class="sidebar" id="sidebar-coordinator">
@@ -639,8 +723,7 @@ html,body{background:var(--bg);color:var(--text1);min-height:100vh;overflow-x:hi
       <div class="sb-logo-text"><div class="school-name">St. Margaret</div><div class="school-tag" id="coord-class-label">COORDINATOR</div></div></div>
     <div class="sb-user"><div style="display:flex;align-items:center;gap:8px;">
       <div style="width:32px;height:32px;background:linear-gradient(135deg,#22c55e,#16a34a);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff;" id="coord-avatar">C</div>
-      <div><div class="sb-user-name" id="coordinator-name">Coordinator</div>
-        <div><span class="badge badge-green" style="font-size:10px;" id="coord-range-badge">Classes —</span></div></div>
+      <div><div class="sb-user-name" id="coordinator-name">Coordinator</div><div><span class="badge badge-green" style="font-size:10px;" id="coord-range-badge">Classes —</span></div></div>
     </div></div>
     <nav class="sb-nav">
       <button class="sb-item active" id="sb-coordinator-submissions" onclick="switchRoleTab('coordinator','submissions')"><i data-lucide="inbox"></i> My Submissions</button>
@@ -663,44 +746,33 @@ html,body{background:var(--bg);color:var(--text1);min-height:100vh;overflow-x:hi
           <div class="stat-card"><div class="stat-num" id="cstat-resolved">—</div><div class="stat-label">Resolved</div></div>
           <div class="stat-card"><div class="stat-num" id="cstat-inreview">—</div><div class="stat-label">In Review</div></div>
         </div>
-        <div class="filter-panel">
-          <div class="filters-row">
-            <input class="filter-inp" id="coordinator-search" placeholder="🔍  Search…" oninput="onFilterChange('coordinator')" style="flex:1;min-width:130px;"/>
-            <select class="filter-inp" id="coordinator-f-status" onchange="onFilterChange('coordinator')"><option value="">All Statuses</option>
-              <option>Pending</option><option>In Review</option><option>Escalated</option><option>Resolved</option><option>Closed</option></select>
-            <select class="filter-inp" id="coordinator-f-cat" onchange="onFilterChange('coordinator')"><option value="">All Categories</option>
-              <option>Academic</option><option>Teacher Behaviour</option><option>Infrastructure</option>
-              <option>Discipline</option><option>Transport</option><option>Administration</option><option>Suggestion</option></select>
-            <select class="filter-inp" id="coordinator-date-preset" onchange="onDatePresetChange('coordinator')">
-              <option value="">📅 All Time</option><option value="today">Today</option>
-              <option value="yesterday">Yesterday</option><option value="7days">Last 7 Days</option>
-              <option value="30days">Last 30 Days</option><option value="thisMonth">This Month</option>
-              <option value="prevMonth">Previous Month</option><option value="thisYear">This Year</option>
-              <option value="custom">Custom Range…</option></select>
-            <button onclick="resetFilters('coordinator')" class="btn-ghost btn-sm" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="x-circle" style="width:12px;height:12px;"></i> Reset</button>
-          </div>
-          <div id="coordinator-custom-range" style="display:none;" class="filters-row">
-            <span style="font-size:12px;color:var(--text3);">From</span>
-            <input type="date" id="coordinator-date-from" class="filter-inp" onchange="onFilterChange('coordinator')"/>
-            <span style="font-size:12px;color:var(--text3);">To</span>
-            <input type="date" id="coordinator-date-to" class="filter-inp" onchange="onFilterChange('coordinator')"/>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;">
-            <div id="coordinator-filter-chips" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
-            <div id="coordinator-result-count" class="result-count"></div>
-          </div>
+        <div class="filters-bar">
+          <input class="filter-inp" id="coordinator-search" placeholder="🔍  Search…" oninput="applyAndRender('coordinator')" style="flex:1;min-width:140px;"/>
+          <select class="filter-inp" id="coordinator-f-status" onchange="applyAndRender('coordinator')"><option value="">All Statuses</option>
+            <option>Pending</option><option>In Review</option><option>Escalated</option><option>Resolved</option><option>Closed</option></select>
+          <select class="filter-inp" id="coordinator-f-cat" onchange="applyAndRender('coordinator')"><option value="">All Categories</option>
+            <option>Academic</option><option>Teacher Behaviour</option><option>Infrastructure</option>
+            <option>Discipline</option><option>Transport</option><option>Administration</option><option>Suggestion</option></select>
+          <select class="filter-inp" id="coordinator-date-preset" onchange="onDatePreset('coordinator')">
+            <option value="">📅 All Time</option><option value="today">Today</option><option value="yesterday">Yesterday</option>
+            <option value="7days">Last 7 Days</option><option value="30days">Last 30 Days</option>
+            <option value="thisMonth">This Month</option><option value="prevMonth">Last Month</option>
+            <option value="thisYear">This Year</option><option value="custom">Custom Range…</option></select>
+          <button onclick="resetFilters('coordinator')" class="btn-ghost btn-sm" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="x-circle" style="width:12px;height:12px;"></i> Reset</button>
+        </div>
+        <div id="coordinator-custom-range" style="display:none;" class="filters-bar">
+          <span style="font-size:12px;color:var(--text3);">From</span>
+          <input type="date" id="coordinator-date-from" class="filter-inp" onchange="applyAndRender('coordinator')"/>
+          <span style="font-size:12px;color:var(--text3);">To</span>
+          <input type="date" id="coordinator-date-to" class="filter-inp" onchange="applyAndRender('coordinator')"/>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:6px;">
+          <div id="coordinator-filter-chips" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+          <span id="coordinator-result-count" style="font-size:12px;color:var(--text3);font-weight:600;"></span>
         </div>
         <div id="coordinator-sub-list"></div>
       </div>
       <div class="dash-tab" id="tab-coordinator-analytics">
-        <div class="an-date-row">
-          <span style="font-size:12px;font-weight:700;color:var(--text2);">Date Range:</span>
-          <select class="filter-inp" id="an-coordinator-date" onchange="onAnalyticsDateChange('coordinator')" style="font-size:12px;">
-            <option value="">All Time</option><option value="today">Today</option>
-            <option value="7days">Last 7 Days</option><option value="30days">Last 30 Days</option>
-            <option value="thisMonth">This Month</option><option value="prevMonth">Previous Month</option>
-            <option value="thisYear">This Year</option></select>
-        </div>
         <div class="stat-grid">
           <div class="stat-card"><div class="stat-num" id="can-total">—</div><div class="stat-label">Total</div></div>
           <div class="stat-card"><div class="stat-num" id="can-pending">—</div><div class="stat-label">Pending</div></div>
@@ -708,8 +780,8 @@ html,body{background:var(--bg);color:var(--text1);min-height:100vh;overflow-x:hi
           <div class="stat-card"><div class="stat-num" id="can-inreview">—</div><div class="stat-label">In Review</div></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="card2" style="padding:18px;"><div style="font-size:12px;font-weight:800;margin-bottom:10px;color:var(--text2);">BY CATEGORY</div><div class="chart-wrap"><canvas id="c-chart-cat"></canvas></div></div>
-          <div class="card2" style="padding:18px;"><div style="font-size:12px;font-weight:800;margin-bottom:10px;color:var(--text2);">BY CLASS</div><div class="chart-wrap"><canvas id="c-chart-class"></canvas></div></div>
+          <div class="card2" style="padding:18px;"><div style="font-size:13px;font-weight:800;margin-bottom:12px;color:var(--text2);">BY CATEGORY</div><div class="chart-wrap"><canvas id="c-chart-cat"></canvas></div></div>
+          <div class="card2" style="padding:18px;"><div style="font-size:13px;font-weight:800;margin-bottom:12px;color:var(--text2);">BY CLASS</div><div class="chart-wrap"><canvas id="c-chart-class"></canvas></div></div>
         </div>
       </div>
       <div class="dash-tab" id="tab-coordinator-collections">

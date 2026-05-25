@@ -1,9 +1,9 @@
-app = r"""'use strict';
+'use strict';
 /* ═══════════════════════════════════════════════════════
    St. Margaret Sr. Sec. School — app.js v4.3 (RESTORED)
    ⚠️ Replace API_URL with your deployed /exec URL
 ═══════════════════════════════════════════════════════ */
-const API_URL      = 'https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID/exec';
+const API_URL      = 'https://script.google.com/macros/s/AKfycbwrhcn0sA4hnLmvKBfCtBau06ONEy61-FPnImZ-w5S0DGqErNctyl2V-sB--TLOkMx4sw/exec';
 const COOLDOWN_MS  = 30*60*1000;
 const COOLDOWN_KEY = 'stm_cooldown_ts';
 const SCHOOL_DOMAIN= '@stmargaretsrsecschool.com';
@@ -46,7 +46,7 @@ const CLASS_CHIPS = [
 
 const PRINCIPAL_TOPICS=['Teaching Methodology','Favouritism / Bias','Harsh Behaviour','Misconduct','Absenteeism','Attitude Issue','Lack of Support','Bullying','Harassment','Abuse / Serious Concern','Ragging','Safety Concern'];
 const PRINCIPAL_CATS=['Teacher Behaviour'];
-const CHART_COLORS=['#f59e0b','#6366f1','#22c55e','#3b82f6','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899'];
+const CHART_COLORS=['#2563EB','#F97316','#F5A623','#3B82F6','#22c55e','#FB923C','#60A5FA','#FBBF24','#EF4444','#93C5FD'];
 
 let selectedChips=[], cachedIP=null, isAnonymous=false;
 
@@ -446,14 +446,14 @@ function renderAnalyticsCharts(data,role){
   if(role==='admin'){
     s('an-total',a.total);s('an-pending',a.pending);s('an-review',a.inReview);s('an-resolved',a.resolved);s('an-escalated',a.escalated);s('an-anon',a.anonymous);
     renderChart('chart-cat',a.byCategory,'doughnut',CHART_COLORS);
-    renderChart('chart-sev',a.bySeverity,'doughnut',{High:'#ef4444',Medium:'#f97316',Normal:'#22c55e'});
+    renderChart('chart-sev',a.bySeverity,'doughnut',{High:'#EF4444',Medium:'#F97316',Normal:'#22c55e'});
     renderChart('chart-handler',a.byAssignee,'doughnut',CHART_COLORS);
-    renderChart('chart-source',{School:a.school,Public:a.publicCount},'doughnut',{School:'#6366f1',Public:'#94a3b8'});
+    renderChart('chart-source',{School:a.school,Public:a.publicCount},'doughnut',{School:'#2563EB',Public:'#F97316'});
     renderTrend('chart-trend',a.weekly);
   }else if(role==='principal'){
     s('pan-total',a.total);s('pan-pending',a.pending);s('pan-resolved',a.resolved);s('pan-escalated',a.escalated);
     renderChart('p-chart-cat',a.byCategory,'doughnut',CHART_COLORS);
-    renderChart('p-chart-sev',a.bySeverity,'doughnut',{High:'#ef4444',Medium:'#f97316',Normal:'#22c55e'});
+    renderChart('p-chart-sev',a.bySeverity,'doughnut',{High:'#EF4444',Medium:'#F97316',Normal:'#22c55e'});
   }else{
     s('can-total',a.total);s('can-pending',a.pending);s('can-resolved',a.resolved);s('can-inreview',a.inReview);
     renderChart('c-chart-cat',a.byCategory,'doughnut',CHART_COLORS);
@@ -483,7 +483,7 @@ function renderTrend(id,weekly){
   Object.entries(weekly||{}).forEach(([k,v])=>{if(days[k]!==undefined)days[k]=v;});
   const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const labels=Object.keys(days).map(d=>{const dt=new Date(d);return`${dt.getUTCDate()} ${M[dt.getUTCMonth()]}`;});
-  S.charts[id]=new Chart(c.getContext('2d'),{type:'bar',data:{labels,datasets:[{label:'Submissions',data:Object.values(days),backgroundColor:'rgba(245,158,11,.4)',borderColor:'#f59e0b',borderWidth:1.5,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#64748b',font:{size:10},stepSize:1},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
+  S.charts[id]=new Chart(c.getContext('2d'),{type:'bar',data:{labels,datasets:[{label:'Submissions',data:Object.values(days),backgroundColor:'rgba(37,99,235,.4)',borderColor:'#60A5FA',borderWidth:1.5,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#64748b',font:{size:10},stepSize:1},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}}}});
 }
 
 /* ═══ ROLE DASHBOARDS ═══ */
