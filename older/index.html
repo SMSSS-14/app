@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>St. Margaret Sr. Sec. School — Feedback Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* ─────────────────────────────────────────────────────────────
+   DESIGN TOKENS — Derived from St. Margaret logo palette
+   Primary Red-Orange #C8401A · Gold #D4A017 · Blue #2A7FC1
+───────────────────────────────────────────────────────────── */
+:root{
+  --pri:#C8401A;--gold:#D4A017;--blue:#2A7FC1;
+  --s0:#0b1220;--s1:#111827;--s2:#1a2436;--s3:#1e2d40;--s4:#253348;
+  --border:rgba(255,255,255,0.08);--border-hi:rgba(200,64,26,0.4);
+  --tp:#f0ece3;--ts:#94a3b8;--tm:#64748b;--tdim:#475569;
+  --ok:#10b981;--warn:#f59e0b;--err:#ef4444;
+  --grd-fire:linear-gradient(135deg,#C8401A 0%,#D4A017 100%);
+  --grd-blue:linear-gradient(135deg,#2A7FC1,#1a5fa0);
+  --grd-dark:linear-gradient(135deg,rgba(200,64,26,.18),rgba(212,160,23,.10));
+  --r4:4px;--r8:8px;--r12:12px;--r16:16px;--r20:20px;--r24:24px;--rfull:9999px;
+  --sh-sm:0 2px 8px rgba(0,0,0,.3);
+  --sh-md:0 8px 32px rgba(0,0,0,.45);
+  --sh-lg:0 20px 60px rgba(0,0,0,.55);
+  --sh-fire:0 4px 20px rgba(200,64,26,.4);
+  --glow-fire:0 0 40px rgba(200,64,26,.25);
+  --glow-gold:0 0 40px rgba(212,160,23,.2);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--s0);color:var(--tp);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* ── AMBIENT BACKGROUND ── */
+.bg-canvas{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bg-canvas::before{content:'';position:absolute;width:800px;height:800px;border-radius:50%;background:radial-gradient(circle,rgba(200,64,26,.14) 0%,transparent 70%);top:-300px;left:-200px;animation:driftA 20s ease-in-out infinite alternate}
+.bg-canvas::after{content:'';position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(212,160,23,.10) 0%,transparent 70%);bottom:-250px;right:-150px;animation:driftB 25s ease-in-out infinite alternate}
+.bg-blob3{position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(42,127,193,.09) 0%,transparent 70%);top:40%;left:50%;transform:translate(-50%,-50%);animation:driftC 18s ease-in-out infinite alternate}
+@keyframes driftA{0%{transform:translate(0,0) scale(1)}100%{transform:translate(60px,40px) scale(1.1)}}
+@keyframes driftB{0%{transform:translate(0,0) scale(1)}100%{transform:translate(-50px,-30px) scale(1.08)}}
+@keyframes driftC{0%{transform:translate(-50%,-50%) scale(1)}100%{transform:translate(-50%,-50%) scale(1.15)}}
+
+/* ── PAGES ── */
+.page{display:none;position:relative;z-index:1;min-height:100vh}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp .4s cubic-bezier(.16,1,.3,1) both}
+
+/* ── GLASSMORPHISM CARD ── */
+.card{background:rgba(255,255,255,.042);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:var(--r24);box-shadow:var(--sh-md),0 1px 0 rgba(255,255,255,.05) inset}
+.card-sm{background:rgba(255,255,255,.035);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--r16);box-shadow:var(--sh-sm)}
+
+/* ── INPUTS ── */
+.inp{width:100%;background:rgba(255,255,255,.055);border:1.5px solid rgba(255,255,255,.10);border-radius:var(--r12);color:var(--tp);padding:12px 16px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s,background .2s}
+.inp:hover{background:rgba(255,255,255,.07)}
+.inp:focus{border-color:var(--pri);box-shadow:0 0 0 3px rgba(200,64,26,.15);background:rgba(255,255,255,.07)}
+.inp::placeholder{color:rgba(255,255,255,.25)}
+.inp option{background:#1e293b;color:var(--tp)}
+.inp:disabled{opacity:.35;cursor:not-allowed}
+.inp-icon{position:relative}
+.inp-icon .inp{padding-left:40px}
+.inp-icon svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--tm);width:16px;height:16px;pointer-events:none}
+textarea.inp{resize:vertical;min-height:120px;line-height:1.65}
+.form-label{display:block;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:8px}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:'DM Sans',sans-serif;font-weight:600;border:none;cursor:pointer;transition:all .2s cubic-bezier(.16,1,.3,1);text-decoration:none;white-space:nowrap;border-radius:var(--r12)}
+.btn-fire{background:var(--grd-fire);color:#fff;padding:12px 24px;font-size:14px;box-shadow:var(--sh-fire)}
+.btn-fire:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(200,64,26,.55)}
+.btn-fire:active{transform:translateY(0)}
+.btn-fire:disabled{opacity:.5;transform:none;cursor:not-allowed}
+.btn-blue{background:var(--grd-blue);color:#fff;padding:12px 22px;font-size:14px;box-shadow:0 4px 16px rgba(42,127,193,.4)}
+.btn-blue:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(42,127,193,.5)}
+.btn-outline{background:transparent;color:var(--ts);border:1.5px solid var(--border);border-radius:var(--r12);padding:9px 18px;font-size:13px;font-weight:500}
+.btn-outline:hover{background:rgba(255,255,255,.07);color:var(--tp);border-color:rgba(255,255,255,.18)}
+.btn-ghost{background:rgba(255,255,255,.05);color:var(--ts);border:1px solid var(--border);border-radius:var(--r8);padding:8px 14px;font-size:12.5px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-ghost:hover{background:rgba(255,255,255,.10);color:var(--tp)}
+.btn-ok{background:rgba(16,185,129,.18);color:#6ee7b7;border:1px solid rgba(16,185,129,.35);border-radius:var(--r8);padding:7px 14px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s}
+.btn-ok:hover{background:rgba(16,185,129,.3)}
+.btn-err{background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.35);border-radius:var(--r8);padding:7px 14px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s}
+.btn-err:hover{background:rgba(239,68,68,.3)}
+.btn-gold{background:rgba(212,160,23,.18);color:#f4d06b;border:1px solid rgba(212,160,23,.35);border-radius:var(--r8);padding:7px 14px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s}
+.btn-gold:hover{background:rgba(212,160,23,.3)}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;border-radius:var(--rfull);padding:3px 10px;font-size:11px;font-weight:700;letter-spacing:.03em;white-space:nowrap}
+.bd-fire{background:rgba(200,64,26,.18);color:#f4a070;border:1px solid rgba(200,64,26,.3)}
+.bd-gold{background:rgba(212,160,23,.18);color:#f4d06b;border:1px solid rgba(212,160,23,.3)}
+.bd-blue{background:rgba(42,127,193,.18);color:#7ec8f0;border:1px solid rgba(42,127,193,.3)}
+.bd-ok{background:rgba(16,185,129,.15);color:#6ee7b7;border:1px solid rgba(16,185,129,.3)}
+.bd-warn{background:rgba(245,158,11,.15);color:#fbbf24;border:1px solid rgba(245,158,11,.3)}
+.bd-err{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
+.bd-dim{background:rgba(100,116,139,.18);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
+.bd-purple{background:rgba(139,92,246,.18);color:#c4b5fd;border:1px solid rgba(139,92,246,.3)}
+
+/* ── ANON TOGGLE ── */
+.anon-wrap{display:flex;align-items:center;gap:14px;background:rgba(42,127,193,.06);border:1.5px solid rgba(42,127,193,.18);border-radius:var(--r16);padding:14px 18px;cursor:pointer;transition:all .25s;user-select:none}
+.anon-wrap:hover{background:rgba(42,127,193,.10)}
+.anon-wrap.on{background:rgba(42,127,193,.14);border-color:rgba(42,127,193,.5);box-shadow:0 0 0 3px rgba(42,127,193,.10)}
+.anon-icon-bg{width:40px;height:40px;border-radius:var(--r12);background:rgba(42,127,193,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .25s}
+.anon-wrap.on .anon-icon-bg{background:rgba(42,127,193,.35)}
+.pill{width:44px;height:24px;background:rgba(255,255,255,.12);border-radius:var(--rfull);position:relative;transition:background .3s;flex-shrink:0;margin-left:auto}
+.pill.on{background:var(--grd-blue)}
+.pill::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .3s cubic-bezier(.34,1.56,.64,1);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.pill.on::after{transform:translateX(20px)}
+.collapsible{overflow:hidden;transition:max-height .35s cubic-bezier(.4,0,.2,1),opacity .3s ease}
+.collapsible.hide{max-height:0!important;opacity:0;pointer-events:none}
+.collapsible.show{max-height:200px;opacity:1}
+.anon-note{background:rgba(42,127,193,.08);border:1px solid rgba(42,127,193,.22);border-radius:var(--r12);padding:11px 15px;display:flex;align-items:flex-start;gap:10px;margin-top:10px;overflow:hidden;max-height:0;opacity:0;transition:max-height .35s ease,opacity .3s ease}
+.anon-note.show{max-height:100px;opacity:1}
+
+/* ── ROUTING PREVIEW ── */
+.route-box{border-radius:var(--r12);border:1.5px solid rgba(212,160,23,.22);background:rgba(212,160,23,.05);padding:14px 16px;display:flex;align-items:flex-start;gap:12px;transition:all .3s;min-height:58px}
+.route-box.principal-route{border-color:rgba(200,64,26,.35);background:rgba(200,64,26,.06)}
+.route-box.coord-route{border-color:rgba(42,127,193,.35);background:rgba(42,127,193,.06)}
+.route-icon{font-size:22px;flex-shrink:0;margin-top:1px}
+.route-to{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tm)}
+.route-name{font-size:14px;font-weight:700;color:var(--tp);margin-top:2px}
+.route-reason{font-size:11.5px;color:var(--ts);margin-top:4px}
+.route-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+
+/* ── PHONE INPUT ── */
+.phone-row{display:flex;background:rgba(255,255,255,.055);border:1.5px solid rgba(255,255,255,.10);border-radius:var(--r12);overflow:hidden;transition:border-color .2s,box-shadow .2s}
+.phone-row:focus-within{border-color:var(--pri);box-shadow:0 0 0 3px rgba(200,64,26,.15)}
+.phone-prefix{padding:12px 14px;color:#f4a070;font-weight:700;font-size:13px;border-right:1px solid rgba(255,255,255,.08);white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:5px}
+.phone-inp{background:transparent;border:none;outline:none;color:var(--tp);padding:12px 14px;font-size:14px;width:100%;font-family:'DM Sans',sans-serif}
+.phone-inp::placeholder{color:rgba(255,255,255,.25)}
+
+/* ── TOAST ── */
+#toasts{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:var(--r12);min-width:260px;max-width:360px;font-size:13px;font-weight:500;backdrop-filter:blur(20px);box-shadow:var(--sh-md);pointer-events:all;animation:slideIn .35s cubic-bezier(.16,1,.3,1)}
+@keyframes slideIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(110%);opacity:0}}
+.t-ok{background:rgba(16,185,129,.18);border:1px solid rgba(16,185,129,.35);color:#6ee7b7}
+.t-err{background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.35);color:#fca5a5}
+.t-info{background:rgba(42,127,193,.18);border:1px solid rgba(42,127,193,.35);color:#7ec8f0}
+.t-warn{background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.35);color:#fbbf24}
+
+/* ── SPINNER ── */
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top:2px solid currentColor;border-radius:50%;animation:rot .7s linear infinite;display:inline-block}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ── SIDEBAR ── */
+#sidebar{position:fixed;inset-y:0;left:0;width:260px;background:rgba(11,18,32,.97);backdrop-filter:blur(28px);border-right:1px solid rgba(200,64,26,.12);z-index:200;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .3s cubic-bezier(.16,1,.3,1)}
+#sidebar.open{transform:translateX(0)}
+#sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;backdrop-filter:blur(2px)}
+#sb-overlay.show{display:block}
+.sb-logo{padding:22px 18px 18px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:12px}
+.sb-logo img{width:40px;height:40px;object-fit:contain;border-radius:10px}
+.sb-school{font-size:12.5px;font-weight:700;color:var(--tp);line-height:1.3}
+.sb-tag{font-size:10px;color:#f4a070;font-weight:600;letter-spacing:.06em;margin-top:2px}
+.sb-nav{flex:1;overflow-y:auto;padding:10px 8px;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.sb-section{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--tdim);padding:12px 10px 5px}
+.sb-btn{display:flex;align-items:center;gap:11px;width:100%;padding:10px 14px;border-radius:var(--r12);border:none;background:transparent;color:var(--ts);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .18s;text-align:left}
+.sb-btn svg{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.sb-btn:hover{background:rgba(255,255,255,.07);color:var(--tp)}
+.sb-btn:hover svg{opacity:1}
+.sb-btn.active{background:rgba(200,64,26,.15);color:#f4a070;border:1px solid rgba(200,64,26,.28)}
+.sb-btn.active svg{opacity:1}
+.sb-div{height:1px;background:rgba(255,255,255,.06);margin:8px 10px}
+.sb-bottom{padding:10px 8px 16px;border-top:1px solid rgba(255,255,255,.06)}
+
+/* ── ADMIN MAIN LAYOUT ── */
+.admin-topbar{position:sticky;top:0;z-index:90;background:rgba(11,18,32,.88);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.06);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.tab-title{font-size:15px;font-weight:700;color:var(--tp);line-height:1.2}
+.tab-sub{font-size:11.5px;color:var(--tm);margin-top:1px}
+.dash-tab{display:none;padding:22px}
+.dash-tab.active{display:block;animation:fadeUp .35s cubic-bezier(.16,1,.3,1)}
+
+/* ── STAT CARDS ── */
+.stats-row{display:grid;gap:12px;margin-bottom:20px}
+.stats-4{grid-template-columns:repeat(4,1fr)}
+.stats-3{grid-template-columns:repeat(3,1fr)}
+.stats-2{grid-template-columns:repeat(2,1fr)}
+.stat-card{border-radius:var(--r16);padding:18px 20px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.07);transition:transform .2s,box-shadow .2s}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--sh-md)}
+.stat-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.04),transparent);pointer-events:none}
+.stat-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.stat-val{font-size:32px;font-weight:800;color:var(--tp);font-family:'Crimson Pro',serif;line-height:1}
+.stat-sub{font-size:11px;color:var(--tm);margin-top:5px}
+
+/* ── SUBMISSION CARDS ── */
+.sub-card{border-radius:var(--r16);background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);transition:all .2s;margin-bottom:10px;overflow:hidden}
+.sub-card:hover{border-color:rgba(200,64,26,.28);box-shadow:0 4px 24px rgba(200,64,26,.08)}
+.sub-head{padding:15px 16px;cursor:pointer}
+.sub-body{display:none;padding:0 16px 15px;border-top:1px solid rgba(255,255,255,.06)}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:var(--r12);padding:12px;margin-bottom:14px}
+.search-box{position:relative;flex:1;min-width:180px}
+.search-box svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--tm);width:14px;height:14px;pointer-events:none}
+.search-inp{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:var(--r8);padding:8px 11px 8px 32px;color:var(--tp);font-size:13px;outline:none;transition:border-color .2s;font-family:'DM Sans',sans-serif}
+.search-inp:focus{border-color:var(--pri)}
+.search-inp::placeholder{color:rgba(255,255,255,.25)}
+.filter-sel{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:var(--r8);color:var(--tp);padding:8px 10px;font-size:12.5px;outline:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:border-color .2s}
+.filter-sel:focus{border-color:var(--pri)}
+.filter-sel option{background:#1e293b}
+
+/* ── CHART WRAP ── */
+.chart-box{position:relative;height:200px}
+
+/* ── COORD TABS ── */
+.ctabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.ctab-btn{padding:8px 16px;border-radius:var(--r8);border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--ts);font-size:12.5px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.ctab-btn.active{background:rgba(200,64,26,.18);border-color:rgba(200,64,26,.38);color:#f4a070}
+.cpanel{display:none}
+.cpanel.active{display:block;animation:fadeUp .3s ease}
+
+/* ── ROLE DASHBOARD TABS ── */
+.role-topbar{background:rgba(11,18,32,.92);border-bottom:1px solid rgba(255,255,255,.06);padding:0 22px;display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.role-topbar::-webkit-scrollbar{display:none}
+.rtab-btn{padding:14px 20px;font-size:13px;font-weight:600;color:var(--ts);background:transparent;border:none;border-bottom:2.5px solid transparent;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .18s;white-space:nowrap;display:flex;align-items:center;gap:7px}
+.rtab-btn:hover{color:var(--tp)}
+.rtab-btn.active{color:#f4a070;border-bottom-color:#C8401A}
+.rpanel{display:none;padding:22px}
+.rpanel.active{display:block;animation:fadeUp .3s ease}
+
+/* ── COLLECTIONS ── */
+.col-chip{display:inline-flex;align-items:center;gap:4px;background:rgba(212,160,23,.12);border:1px solid rgba(212,160,23,.28);color:#f4d06b;border-radius:var(--rfull);padding:2px 9px;font-size:11px;font-weight:700}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex;animation:fadeUp .25s ease}
+.modal-box{background:rgba(17,24,39,.95);border:1px solid var(--border);border-radius:var(--r24);padding:26px;width:100%;max-width:440px;box-shadow:var(--sh-lg)}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:52px 24px;color:var(--tm)}
+.empty svg{width:44px;height:44px;margin:0 auto 14px;opacity:.3;display:block}
+.empty h3{font-size:15px;font-weight:700;color:var(--ts);margin-bottom:6px}
+.empty p{font-size:13px;line-height:1.6}
+
+/* ── ROLE LOGIN CARDS ── */
+.role-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:20px}
+.role-card{background:rgba(255,255,255,.04);border:1.5px solid var(--border);border-radius:var(--r16);padding:16px 12px;text-align:center;cursor:pointer;transition:all .22s}
+.role-card:hover{border-color:rgba(200,64,26,.38);background:rgba(200,64,26,.07);transform:translateY(-2px)}
+.role-card.sel{border-color:var(--pri);background:rgba(200,64,26,.14);box-shadow:var(--glow-fire)}
+.role-icon{font-size:26px;margin-bottom:8px}
+.role-name{font-size:12.5px;font-weight:700;color:var(--tp)}
+.role-range{font-size:10.5px;color:var(--tm);margin-top:3px;line-height:1.4}
+
+/* ── CRED SECTION ── */
+.cred-card{background:rgba(255,255,255,.035);border:1px solid var(--border);border-radius:var(--r20);padding:20px;transition:border-color .2s}
+.cred-card:hover{border-color:rgba(255,255,255,.14)}
+
+/* ── ROUTING SECTION DIVIDERS ── */
+.section-pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--rfull);padding:4px 12px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tm);margin-bottom:14px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1100px){.stats-4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.dash-tab,.rpanel{padding:14px}.stats-4,.stats-3{grid-template-columns:repeat(2,1fr)}.role-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.stats-4,.stats-3,.stats-2{grid-template-columns:1fr 1fr}}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="bg-canvas"><div class="bg-blob3"></div></div>
+<div id="toasts"></div>
+
+<!-- ════════════════════════════════════════════════════════
+     HOME — FEEDBACK FORM
+════════════════════════════════════════════════════════ -->
+<div id="page-home" class="page active">
+  <div style="min-height:100vh;display:flex;flex-direction:column">
+    <!-- Top nav -->
+    <nav style="display:flex;justify-content:space-between;align-items:center;padding:16px 24px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <img src="logo.png" alt="Logo" style="height:36px;object-fit:contain" onerror="this.style.display='none'"/>
+        <span style="font-size:13px;font-weight:700;color:var(--ts)">St. Margaret School</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="nav('role-login')" class="btn-outline btn" style="font-size:12.5px;padding:8px 16px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Staff Login
+        </button>
+        <button onclick="nav('admin-login')" class="btn-outline btn" style="font-size:12.5px;padding:8px 16px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Admin
+        </button>
+      </div>
+    </nav>
+
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px 16px 48px">
+      <div style="width:100%;max-width:530px" class="fade-up">
+
+        <!-- School branding -->
+        <div style="text-align:center;margin-bottom:32px">
+          <div style="position:relative;display:inline-block;margin-bottom:16px">
+            <div style="position:absolute;inset:-8px;border-radius:50%;background:var(--grd-fire);opacity:.15;filter:blur(16px)"></div>
+            <img src="logo.png" alt="School Logo" style="width:96px;height:96px;object-fit:contain;position:relative;z-index:1" onerror="this.outerHTML='<div style=\'width:96px;height:96px;border-radius:50%;background:var(--grd-fire);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;color:#fff\'>SM</div>'"/>
+          </div>
+          <h1 style="font-family:'Crimson Pro',serif;font-size:30px;font-weight:700;color:var(--tp);line-height:1.15;letter-spacing:-.02em">St. Margaret Sr. Sec. School</h1>
+          <p style="margin-top:6px;font-size:11px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;color:#f4a070">✦ Spread the Light ✦</p>
+          <div style="margin-top:12px;height:2px;width:72px;margin-left:auto;margin-right:auto;background:var(--grd-fire);border-radius:2px"></div>
+        </div>
+
+        <!-- Form card -->
+        <div class="card" style="padding:30px 28px">
+          <div style="margin-bottom:24px">
+            <h2 style="font-size:18px;font-weight:700;color:var(--tp)">Share Your Feedback</h2>
+            <p style="color:var(--ts);font-size:13px;margin-top:5px;line-height:1.55">Your voice shapes our school. Every submission is treated with care and confidentiality.</p>
+          </div>
+
+          <form id="feedback-form" onsubmit="submitForm(event)" autocomplete="off" novalidate>
+            <div style="display:grid;gap:20px">
+
+              <!-- Anonymous toggle -->
+              <div>
+                <div class="anon-wrap" id="anon-toggle" onclick="toggleAnon()">
+                  <div class="anon-icon-bg">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7ec8f0" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="17"/><line x1="17" y1="11" x2="23" y2="17"/></svg>
+                  </div>
+                  <div style="flex:1">
+                    <div style="font-weight:700;font-size:14px;color:var(--tp)">Submit Anonymously</div>
+                    <div style="font-size:12px;color:var(--ts);margin-top:2px">Your name &amp; phone will be hidden</div>
+                  </div>
+                  <div class="pill" id="anon-pill"></div>
+                </div>
+                <div class="anon-note" id="anon-note">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7ec8f0" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <p style="font-size:12px;color:#7ec8f0;line-height:1.5"><strong style="color:#bde4f7">Anonymous mode on.</strong> Name and phone will not be stored. Your device IP is still recorded to prevent spam.</p>
+                </div>
+              </div>
+
+              <!-- Category -->
+              <div>
+                <label class="form-label">Category *</label>
+                <select id="f-category" class="inp" required onchange="updateRouting()">
+                  <option value="">— Select Category —</option>
+                  <option value="Suggestion">💡 Suggestion</option>
+                  <option value="Complaint">⚠️ Complaint</option>
+                  <option value="Feedback">📝 Feedback</option>
+                </select>
+              </div>
+
+              <!-- Name -->
+              <div class="collapsible show" id="row-name">
+                <label class="form-label">Full Name *</label>
+                <input id="f-name" type="text" class="inp" placeholder="Enter your full name"/>
+              </div>
+
+              <!-- Class & Email row -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                <div>
+                  <label class="form-label">Class / Role *</label>
+                  <select id="f-class" class="inp" required onchange="updateRouting()"><option value="">— Select —</option></select>
+                </div>
+                <div>
+                  <label class="form-label">Topic *</label>
+                  <select id="f-topic" class="inp" required onchange="updateRouting()"><option value="">— Select —</option></select>
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div>
+                <label class="form-label">Email <span style="font-size:10px;font-weight:400;text-transform:none;color:var(--tm)">(optional — for follow-up)</span></label>
+                <input id="f-email" type="email" class="inp" placeholder="your@email.com" oninput="updateRouting()"/>
+                <div id="email-badge" style="margin-top:8px;display:none"></div>
+              </div>
+
+              <!-- Routing preview -->
+              <div>
+                <label class="form-label">Where your submission goes</label>
+                <div class="route-box" id="route-preview">
+                  <span class="route-icon">🔀</span>
+                  <div>
+                    <div class="route-to">Select class &amp; topic first</div>
+                    <div class="route-name" style="color:var(--ts);font-size:13px;font-weight:500">Routing will appear automatically</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Phone -->
+              <div class="collapsible show" id="row-phone">
+                <label class="form-label">Phone Number *</label>
+                <div class="phone-row">
+                  <div class="phone-prefix">🇮🇳 +91</div>
+                  <input id="f-phone" type="tel" class="phone-inp" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric" oninput="this.value=this.value.replace(/\D/g,'')"/>
+                </div>
+              </div>
+
+              <!-- Message -->
+              <div>
+                <label class="form-label">Your Message *</label>
+                <textarea id="f-message" class="inp" placeholder="Describe your feedback, suggestion, or complaint in detail. Be specific for faster resolution…"></textarea>
+              </div>
+
+              <!-- Submit -->
+              <button type="submit" id="submit-btn" class="btn btn-fire" style="width:100%;padding:14px;font-size:15px">
+                <svg id="submit-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <span id="submit-txt">Submit Feedback</span>
+                <span id="submit-spin" style="display:none"><span class="spin"></span></span>
+              </button>
+
+            </div>
+          </form>
+        </div>
+        <p style="text-align:center;color:var(--tdim);font-size:11.5px;margin-top:18px">© 2026 St. Margaret Sr. Sec. School · All rights reserved</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     SUCCESS
+════════════════════════════════════════════════════════ -->
+<div id="page-success" class="page">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
+    <div class="card fade-up" style="padding:52px 36px;max-width:460px;width:100%;text-align:center">
+      <div style="width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 0 48px rgba(16,185,129,.4);display:flex;align-items:center;justify-content:center;margin:0 auto 22px">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2 style="font-family:'Crimson Pro',serif;font-size:28px;font-weight:700;color:var(--tp);margin-bottom:10px">Submitted Successfully 🙏</h2>
+      <p style="color:var(--ts);font-size:14px;line-height:1.65;margin-bottom:8px" id="success-msg">Your feedback has been submitted to <strong style="color:#f4a070">St. Margaret Sr. Sec. School</strong>.</p>
+      <p style="color:var(--tm);font-size:12.5px;margin-bottom:30px">We review every submission and take action within 48 hours.</p>
+      <button onclick="nav('home')" class="btn btn-fire" style="padding:12px 28px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Back to Home
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     ROLE LOGIN (Principal + Coordinators)
+════════════════════════════════════════════════════════ -->
+<div id="page-role-login" class="page">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
+    <div style="width:100%;max-width:560px" class="fade-up">
+      <button onclick="nav('home')" class="btn-ghost" style="margin-bottom:18px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to Home
+      </button>
+      <div class="card" style="padding:32px 28px">
+        <div style="text-align:center;margin-bottom:26px">
+          <div style="width:62px;height:62px;border-radius:var(--r16);background:var(--grd-blue);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 4px 20px rgba(42,127,193,.45)">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h2 style="font-size:19px;font-weight:700;color:var(--tp)">Staff Portal Login</h2>
+          <p style="color:var(--ts);font-size:13px;margin-top:4px">Principal and Coordinators sign in here</p>
+        </div>
+
+        <div style="font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--tm);margin-bottom:10px">Select Your Role</div>
+        <div class="role-grid" id="role-select-grid">
+          <div style="grid-column:1/-1;text-align:center;color:var(--tm);padding:18px;font-size:13px;border:1px dashed rgba(255,255,255,.08);border-radius:var(--r12)">Loading roles…</div>
+        </div>
+
+        <form id="role-login-form" onsubmit="roleLogin(event)" autocomplete="off" novalidate>
+          <input type="hidden" id="selected-role" value=""/>
+          <div style="display:grid;gap:14px">
+            <div>
+              <label class="form-label">Email</label>
+              <input id="rl-email" type="email" class="inp" placeholder="your@email.com"/>
+            </div>
+            <div>
+              <label class="form-label">Password</label>
+              <input id="rl-password" type="password" class="inp" placeholder="••••••••"/>
+            </div>
+            <button type="submit" id="role-login-btn" class="btn btn-blue" style="width:100%;padding:13px;font-size:14px">
+              <span id="rl-txt">Sign In</span>
+              <span id="rl-spin" style="display:none"><span class="spin"></span></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     ADMIN LOGIN
+════════════════════════════════════════════════════════ -->
+<div id="page-admin-login" class="page">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
+    <div style="width:100%;max-width:420px" class="fade-up">
+      <button onclick="nav('home')" class="btn-ghost" style="margin-bottom:18px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back
+      </button>
+      <div class="card" style="padding:34px 28px">
+        <div style="text-align:center;margin-bottom:26px">
+          <div style="width:62px;height:62px;border-radius:var(--r16);background:var(--grd-fire);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:var(--sh-fire)">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h2 style="font-size:19px;font-weight:700;color:var(--tp)">Admin Portal</h2>
+          <p style="color:var(--ts);font-size:13px;margin-top:4px">Supervisor access · Full system visibility</p>
+        </div>
+        <form id="admin-login-form" onsubmit="adminLogin(event)" autocomplete="off" novalidate>
+          <div style="display:grid;gap:16px">
+            <div>
+              <label class="form-label">Email Address</label>
+              <div class="inp-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <input id="l-email" type="email" class="inp" placeholder="admin@school.com"/>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Password</label>
+              <div class="inp-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <input id="l-password" type="password" class="inp" placeholder="••••••••"/>
+              </div>
+            </div>
+            <button type="submit" id="login-btn" class="btn btn-fire" style="width:100%;padding:13px;font-size:14px;margin-top:4px">
+              <span id="login-txt">Sign In to Admin</span>
+              <span id="login-spin" style="display:none"><span class="spin"></span></span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     ROLE DASHBOARD (Principal & Coordinators)
+════════════════════════════════════════════════════════ -->
+<div id="page-role-dashboard" class="page">
+  <!-- Header -->
+  <div class="admin-topbar">
+    <div class="topbar-left">
+      <button onclick="roleLogout()" class="btn-ghost" style="padding:8px 10px" title="Logout">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+      <img src="logo.png" style="height:32px;object-fit:contain" onerror="this.style.display='none'"/>
+      <div>
+        <div class="tab-title" id="role-dash-title">Dashboard</div>
+        <div class="tab-sub" id="role-dash-sub"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span id="role-badge" class="badge bd-fire" style="font-size:11.5px"></span>
+      <button onclick="roleDashRefresh()" class="btn-ghost" style="padding:8px 12px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+      <button onclick="roleDashExport()" class="btn-ghost" style="padding:8px 12px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div style="padding:16px 22px 0">
+    <div class="stats-row stats-4">
+      <div class="stat-card" style="background:linear-gradient(135deg,rgba(200,64,26,.18),rgba(212,160,23,.10))"><div class="stat-lbl" style="color:#f4a070">Total Assigned</div><div class="stat-val" id="rs-total">—</div></div>
+      <div class="stat-card" style="background:linear-gradient(135deg,rgba(245,158,11,.16),rgba(217,119,6,.10))"><div class="stat-lbl" style="color:#fbbf24">Pending</div><div class="stat-val" id="rs-pending">—</div></div>
+      <div class="stat-card" style="background:linear-gradient(135deg,rgba(16,185,129,.16),rgba(5,150,105,.10))"><div class="stat-lbl" style="color:#6ee7b7">Completed</div><div class="stat-val" id="rs-completed">—</div></div>
+      <div class="stat-card" style="background:linear-gradient(135deg,rgba(239,68,68,.16),rgba(220,38,38,.10))"><div class="stat-lbl" style="color:#fca5a5">Complaints</div><div class="stat-val" id="rs-complaints">—</div></div>
+    </div>
+  </div>
+
+  <!-- Role Tabs -->
+  <div class="role-topbar">
+    <button class="rtab-btn active" onclick="switchRTab('subs')" id="rt-subs">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      My Submissions
+    </button>
+    <button class="rtab-btn" onclick="switchRTab('cols')" id="rt-cols">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      My Collections
+    </button>
+  </div>
+
+  <!-- Submissions panel -->
+  <div class="rpanel active" id="rp-subs">
+    <div class="filter-bar">
+      <div class="search-box" style="flex:1;min-width:180px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="r-search" type="text" class="search-inp" placeholder="Search name, message, topic…" oninput="renderRoleList()"/>
+      </div>
+      <select id="r-cat" class="filter-sel" onchange="renderRoleList()">
+        <option value="">All Categories</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Complaint">Complaint</option>
+        <option value="Feedback">Feedback</option>
+      </select>
+      <select id="r-topic" class="filter-sel" onchange="renderRoleList()"><option value="">All Topics</option></select>
+      <select id="r-status" class="filter-sel" onchange="renderRoleList()">
+        <option value="">All Status</option>
+        <option value="Pending">Pending</option>
+        <option value="Completed">Completed</option>
+      </select>
+      <select id="r-anon" class="filter-sel" onchange="renderRoleList()">
+        <option value="">All Types</option>
+        <option value="yes">Anonymous</option>
+        <option value="no">Named</option>
+      </select>
+      <input type="date" id="r-date" class="filter-sel" onchange="renderRoleList()" style="color-scheme:dark"/>
+    </div>
+    <div id="r-count" style="color:var(--tm);font-size:12px;margin-bottom:10px"></div>
+    <div id="role-sub-list"></div>
+  </div>
+
+  <!-- Collections panel -->
+  <div class="rpanel" id="rp-cols">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div>
+        <h3 style="font-size:15px;font-weight:700;color:var(--tp)">My Collections</h3>
+        <p style="color:var(--tm);font-size:12.5px;margin-top:3px">Private — not visible to admin or anyone else</p>
+      </div>
+      <button onclick="newCol()" class="btn btn-fire" style="padding:9px 18px;font-size:13px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Collection
+      </button>
+    </div>
+    <div id="role-col-list"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     ADMIN DASHBOARD
+════════════════════════════════════════════════════════ -->
+<div id="page-dashboard" class="page">
+  <div id="sb-overlay" onclick="closeSB()"></div>
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="sb-logo">
+      <img src="logo.png" alt="Logo" onerror="this.style.display='none'"/>
+      <div>
+        <div class="sb-school">St. Margaret School</div>
+        <div class="sb-tag">✦ Admin Panel</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Overview</div>
+      <button class="sb-btn active" id="sb-submissions" onclick="switchTab('submissions')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>All Submissions
+      </button>
+      <button class="sb-btn" id="sb-analytics" onclick="switchTab('analytics')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics
+      </button>
+      <div class="sb-div"></div>
+      <div class="sb-section">Role Dashboards</div>
+      <button class="sb-btn" id="sb-principal" onclick="switchTab('principal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Principal
+      </button>
+      <button class="sb-btn" id="sb-coordinators" onclick="switchTab('coordinators')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Coordinators
+      </button>
+      <div class="sb-div"></div>
+      <div class="sb-section">Settings</div>
+      <button class="sb-btn" id="sb-credentials" onclick="switchTab('credentials')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>Credentials
+      </button>
+      <button class="sb-btn" onclick="adminExport()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export All CSV
+      </button>
+    </nav>
+    <div class="sb-bottom">
+      <button onclick="adminLogout()" class="sb-btn" style="color:#fca5a5;width:100%">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout
+      </button>
+    </div>
+  </aside>
+
+  <div style="display:flex;flex-direction:column;min-height:100vh">
+    <!-- Top bar -->
+    <div class="admin-topbar">
+      <div class="topbar-left">
+        <button onclick="toggleSB()" class="btn-ghost" style="padding:8px 10px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div>
+          <div class="tab-title" id="tab-title">All Submissions</div>
+          <div class="tab-sub" id="tab-sub">Supervisor view</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="refresh-time" style="color:var(--tm);font-size:11px"></span>
+        <button onclick="loadDashboard()" class="btn-ghost" style="padding:8px 10px" title="Refresh">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ─── TAB: ALL SUBMISSIONS ─── -->
+    <div id="tab-submissions" class="dash-tab active">
+      <div class="filter-bar">
+        <div class="search-box" style="flex:1;min-width:180px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="a-search" type="text" class="search-inp" placeholder="Search name, email, message, IP…" oninput="renderSubmissions()"/>
+        </div>
+        <select id="a-cat" class="filter-sel" onchange="renderSubmissions()">
+          <option value="">All Categories</option>
+          <option value="Suggestion">Suggestion</option>
+          <option value="Complaint">Complaint</option>
+          <option value="Feedback">Feedback</option>
+        </select>
+        <select id="a-topic" class="filter-sel" onchange="renderSubmissions()"><option value="">All Topics</option></select>
+        <select id="a-status" class="filter-sel" onchange="renderSubmissions()">
+          <option value="">All Status</option>
+          <option value="Pending">Pending</option>
+          <option value="Completed">Completed</option>
+        </select>
+        <select id="a-assigned" class="filter-sel" onchange="renderSubmissions()"><option value="">All Assigned</option></select>
+        <select id="a-sheet" class="filter-sel" onchange="renderSubmissions()">
+          <option value="">All Sources</option>
+          <option value="SchoolResponses">School Email</option>
+          <option value="PublicResponses">Public Email</option>
+        </select>
+        <select id="a-anon" class="filter-sel" onchange="renderSubmissions()">
+          <option value="">All Types</option>
+          <option value="yes">Anonymous</option>
+          <option value="no">Named</option>
+        </select>
+        <input type="date" id="a-date" class="filter-sel" onchange="renderSubmissions()" style="color-scheme:dark"/>
+      </div>
+      <div id="a-count" style="color:var(--tm);font-size:12px;margin-bottom:10px"></div>
+      <div id="admin-sub-list"></div>
+    </div>
+
+    <!-- ─── TAB: ANALYTICS ─── -->
+    <div id="tab-analytics" class="dash-tab">
+      <div class="stats-row stats-3" style="margin-bottom:16px">
+        <div class="stat-card" style="background:linear-gradient(135deg,rgba(200,64,26,.2),rgba(212,160,23,.12))"><div class="stat-lbl" style="color:#f4a070">Total</div><div class="stat-val" id="st-total">—</div></div>
+        <div class="stat-card" style="background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(217,119,6,.10))"><div class="stat-lbl" style="color:#fbbf24">Pending</div><div class="stat-val" id="st-pending">—</div></div>
+        <div class="stat-card" style="background:linear-gradient(135deg,rgba(16,185,129,.18),rgba(5,150,105,.10))"><div class="stat-lbl" style="color:#6ee7b7">Completed</div><div class="stat-val" id="st-completed">—</div></div>
+        <div class="stat-card" style="background:linear-gradient(135deg,rgba(239,68,68,.16),rgba(220,38,38,.10))"><div class="stat-lbl" style="color:#fca5a5">Complaints</div><div class="stat-val" id="st-complaints">—</div></div>
+        <div class="stat-card" style="background:linear-gradient(135deg,rgba(42,127,193,.18),rgba(26,95,160,.10))"><div class="stat-lbl" style="color:#7ec8f0">Suggestions</div><div class="stat-val" id="st-suggest">—</div></div>
+        <div class="stat-card" style="background:linear-gradient(135deg,rgba(212,160,23,.18),rgba(180,125,10,.10))"><div class="stat-lbl" style="color:#f4d06b">Feedback</div><div class="stat-val" id="st-feedback">—</div></div>
+        <div class="stat-card" style="background:linear-gradient(135deg,rgba(100,116,139,.18),rgba(71,85,105,.10))"><div class="stat-lbl" style="color:#94a3b8">Anonymous</div><div class="stat-val" id="st-anon">—</div></div>
+        <div class="stat-card" style="background:linear-gradient(135deg,rgba(16,185,129,.16),rgba(5,150,105,.10))"><div class="stat-lbl" style="color:#6ee7b7">School Email</div><div class="stat-val" id="st-school">—</div></div>
+        <div class="stat-card" style="background:linear-gradient(135deg,rgba(42,127,193,.16),rgba(26,95,160,.10))"><div class="stat-lbl" style="color:#7ec8f0">Public Email</div><div class="stat-val" id="st-public">—</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        <div class="card-sm" style="padding:18px"><h3 style="font-size:13px;font-weight:700;color:var(--tp);margin-bottom:14px">By Category</h3><div class="chart-box"><canvas id="ch-cat"></canvas></div></div>
+        <div class="card-sm" style="padding:18px"><h3 style="font-size:13px;font-weight:700;color:var(--tp);margin-bottom:14px">By Topic</h3><div class="chart-box"><canvas id="ch-topic"></canvas></div></div>
+        <div class="card-sm" style="padding:18px"><h3 style="font-size:13px;font-weight:700;color:var(--tp);margin-bottom:14px">Last 7 Days</h3><div class="chart-box"><canvas id="ch-date"></canvas></div></div>
+        <div class="card-sm" style="padding:18px;grid-column:span 2"><h3 style="font-size:13px;font-weight:700;color:var(--tp);margin-bottom:14px">Workload by Role</h3><div class="chart-box" style="height:180px"><canvas id="ch-work"></canvas></div></div>
+        <div class="card-sm" style="padding:18px"><h3 style="font-size:13px;font-weight:700;color:var(--tp);margin-bottom:14px">Email Source</h3><div class="chart-box"><canvas id="ch-email"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ─── TAB: PRINCIPAL ─── -->
+    <div id="tab-principal" class="dash-tab">
+      <div class="card-sm" style="padding:16px 18px;margin-bottom:16px;border-left:3px solid #f4a070">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <h2 style="font-size:15px;font-weight:700;color:var(--tp)">🏛️ Principal Dashboard</h2>
+            <p style="color:var(--tm);font-size:12.5px;margin-top:3px">Teacher feedback · Fee issues · Staff &amp; parent submissions · High-severity complaints</p>
+          </div>
+          <span class="badge bd-fire">PRINCIPAL</span>
+        </div>
+      </div>
+      <div class="stats-row stats-4" style="margin-bottom:16px">
+        <div class="stat-card" style="background:linear-gradient(135deg,rgba(200,64,26,.18),rgba(212,160,23,.10))"><div class="stat-lbl" style="color:#f4a070">Total</div><div class="stat-val" id="p-total">—</div></div>
+        <div class="stat-card" style="background:linear-gradient(135deg,rgba(245,158,11,.16),rgba(217,119,6,.10))"><div class="stat-lbl" style="color:#fbbf24">Pending</div><div class="stat-val" id="p-pending">—</div></div>
+        <div class="stat-card" style="background:linear-gradient(135deg,rgba(16,185,129,.16),rgba(5,150,105,.10))"><div class="stat-lbl" style="color:#6ee7b7">Completed</div><div class="stat-val" id="p-completed">—</div></div>
+        <div class="stat-card" style="background:linear-gradient(135deg,rgba(239,68,68,.16),rgba(220,38,38,.10))"><div class="stat-lbl" style="color:#fca5a5">Complaints</div><div class="stat-val" id="p-complaints">—</div></div>
+      </div>
+      <div id="principal-list"></div>
+    </div>
+
+    <!-- ─── TAB: COORDINATORS (fully dynamic) ─── -->
+    <div id="tab-coordinators" class="dash-tab">
+      <div class="card-sm" style="padding:16px 18px;margin-bottom:16px;border-left:3px solid #7ec8f0">
+        <h2 style="font-size:15px;font-weight:700;color:var(--tp)">👥 Coordinator Dashboards</h2>
+        <p style="color:var(--tm);font-size:12.5px;margin-top:3px">Submissions routed to each coordinator based on their assigned class ranges</p>
+      </div>
+      <div id="coord-area"></div>
+    </div>
+
+    <!-- ─── TAB: CREDENTIALS ─── -->
+    <div id="tab-credentials" class="dash-tab">
+      <!-- rendered by renderCredPage() -->
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /admin page -->
+
+<!-- ════════════════════════════════════════════════════════
+     COLLECTION MODAL
+════════════════════════════════════════════════════════ -->
+<div id="col-modal" class="modal-bg" onclick="closeColModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <h3 style="font-size:15px;font-weight:700;color:var(--tp)">Add to My Collection</h3>
+      <button onclick="_closeColModal()" class="btn-ghost" style="padding:6px 8px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div id="col-modal-body"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
